@@ -1,0 +1,193 @@
+/* AddContent.css — minimal, all heavy styles in Dashboard.css */
+
+/* The page now uses .add-content-page + .form-card from Dashboard.css */
+/* This file kept only for extra AddContent-specific tweaks */
+
+.add-content-page .form-card {
+  /* inherits from Dashboard.css */
+}
+
+.add-content-page .form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .add-content-page .form-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   🚀 Coming Soon Section
+========================= */
+
+.coming-soon-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 77, 109, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 77, 109, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Checkbox Row */
+.coming-soon-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: #ff4d6d;
+}
+
+/* Date Input */
+.coming-date-input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: #fff;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.coming-date-input:focus {
+  border-color: #ff4d6d;
+  box-shadow: 0 0 0 1px #ff4d6d;
+}
+
+/* Fix date picker icon for dark mode */
+.coming-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* Selected Date Text */
+.selected-date-text {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* Label */
+.coming-date-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.cast-row-grid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 2fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cast-row-grid input {
+  height: 40px;
+  width: 100%;
+}
+
+.cast-row-grid input[type="file"] {
+  background: #0f172a;
+  color: #fff;
+  border: 1px solid #334155;
+  padding: 6px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.cast-row-grid small {
+  grid-column: span 3;
+  font-size: 12px;
+  color: #22c55e;
+}
+
+.btn-sq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  height: 40px;
+  width: 40px;
+  cursor: pointer;
+}
+
+.btn-sq:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.form-card {
+  padding: 20px;
+}
+
+/* ---- Checkbox Row ---- */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.checkbox-row span {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Buttons ---- */
+.btn-lg {
+  background: var(--grad-primary);
+  color: white;
+  border: none;
+  padding: 18px 40px;
+  border-radius: 16px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 10px 30px rgba(var(--primary-rgb), 0.3);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-lg:hover:not(:disabled) {
+  transform: scale(1.02) translateY(-4px);
+  box-shadow: 0 15px 40px rgba(var(--primary-rgb), 0.45);
+}
+
+.btn-lg:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

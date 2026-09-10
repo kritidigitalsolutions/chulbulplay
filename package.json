@@ -1,0 +1,16 @@
+{
+  "name": "chulbulplay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ChulbulPlay admin application",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run lint"
+  },
+  "dependencies": {
+    "firebase": "^12.18.0"
+  }
+}

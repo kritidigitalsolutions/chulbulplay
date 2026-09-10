@@ -1,0 +1,654 @@
+================================================================================
+CHULBULPLAY - MULTI-PAYMENT GATEWAY (RAZORPAY, ZAAKPAY & HDFC BANK) COMPLETE GUIDE
+SINGLE ACTIVE PAYMENT GATEWAY ARCHITECTURE & FULL FLUTTER APP IMPLEMENTATION
+================================================================================
+
+RULE: ONLY ONE PAYMENT GATEWAY IS ACTIVE AT A TIME.
+- Enabling Razorpay automatically disables Zaakpay and HDFC Bank.
+- Enabling Zaakpay automatically disables Razorpay and HDFC Bank.
+- Enabling HDFC Bank automatically disables Razorpay and Zaakpay.
+
+TABLE OF CONTENTS:
+1. Architecture & Single Active Gateway Rule
+2. Database Models & Schema Reference
+3. Backend API Endpoints Reference
+   3.1 Active Gateway Discovery (GET /api/payment/gateways)
+   3.2 Razorpay Flow (Order Creation & Verification)
+   3.3 Zaakpay Flow (V13 Hosted Order, ZaakpayOrder Model, Callback & Status)
+   3.4 HDFC Bank Flow (SmartGateway / SmartHub, HdfcOrder Model, Callback, UPI Intent & Status)
+   3.5 Admin Payment Settings Management
+4. Gateways Technical Specifications & Credentials
+5. Complete Flutter Mobile Implementation (Ready to Run)
+   5.1 pubspec.yaml Dependencies
+   5.2 Gateway Discovery Model
+   5.3 Payment Service Class (All HTTP Calls)
+   5.4 Zaakpay & HDFC In-App WebView Checkout Screens
+   5.5 Complete Subscription Checkout Screen (Handles Razorpay, Zaakpay & HDFC)
+6. Testing Checklist for All Gateways
+
+================================================================================
+1. ARCHITECTURE & SINGLE ACTIVE GATEWAY RULE
+================================================================================
+
+In the Admin Dashboard (`/dashboard/payment-gateways`):
+- Admin can switch between **Razorpay**, **Zaakpay**, or **HDFC Bank**.
+- When any gateway is enabled, all other gateways are automatically switched off.
+
+Client App Behavior (Flutter & Web):
+1. The app calls `GET /api/payment/gateways`.
+2. App reads the single active gateway and launches the corresponding checkout:
+   - **Razorpay Active**: Launches Razorpay native checkout overlay.
+   - **Zaakpay Active**: Launches Zaakpay In-App Hosted WebView screen.
+   - **HDFC Bank Active**: Launches HDFC SmartGateway / Direct UPI Intent checkout.
+3. User completes payment -> Backend creates active Subscription -> App confirms activation.
+
+================================================================================
+2. DATABASE MODELS & SCHEMA REFERENCE
+================================================================================
+
+1. PaymentConfig Model (`backend/models/paymentConfig.model.js`):
+   - `razorpayEnabled`: Boolean
+   - `zaakpayEnabled`: Boolean
+   - `hdfcEnabled`: Boolean
+   - `defaultGateway`: 'razorpay' | 'zaakpay' | 'hdfc'
+   - `zaakpayMode`: 'test' | 'live'
+   - `hdfcMode`: 'test' | 'live'
+
+2. HdfcOrder Model (`backend/models/hdfcOrder.model.js`):
+   - `orderId`: String (Unique, e.g. "HDFC1787140000000_1234")
+   - `user`: ObjectId (ref: "User")
+   - `plan`: ObjectId (ref: "Plan")
+   - `promoCode`: String
+   - `amount`: Number
+   - `vpa`: String (e.g. "roccoplaywork@hdfcbank")
+   - `status`: 'initiated' | 'completed' | 'failed'
+
+3. ZaakpayOrder Model (`backend/models/zaakpayOrder.model.js`):
+   - `orderId`: String (Unique)
+   - `user`: ObjectId (ref: "User")
+   - `plan`: ObjectId (ref: "Plan")
+   - `amount`: Number
+   - `status`: 'initiated' | 'completed' | 'failed'
+
+4. Subscription Model (`backend/models/subscription.model.js`):
+   - `user`: ObjectId (ref: "User")
+   - `plan`: ObjectId (ref: "Plan")
+   - `status`: 'active' | 'cancelled' | 'expired'
+   - `paymentGateway`: 'razorpay' | 'zaakpay' | 'hdfc' | 'manual' | 'voucher'
+   - `paymentId`: String (Unique)
+   - `subscriptionId`: String (Order ID)
+   - `amount`: Number
+   - `currency`: 'INR'
+   - `startDate`: Date
+   - `endDate`: Date
+
+================================================================================
+3. BACKEND API ENDPOINTS REFERENCE
+================================================================================
+
+Base URL: http://localhost:8000 (or your live API server URL)
+
+--------------------------------------------------------------------------------
+3.1 GET ACTIVE GATEWAY
+--------------------------------------------------------------------------------
+Endpoint: GET /api/payment/gateways
+Auth: Optional / Public
+
+Sample Response When HDFC Bank is Active:
+{
+  "success": true,
+  "gateways": {
+    "razorpay": {
+      "enabled": false,
+      "name": "Razorpay",
+      "key": null
+    },
+    "zaakpay": {
+      "enabled": false,
+      "name": "Zaakpay",
+      "mode": "test"
+    },
+    "hdfc": {
+      "enabled": true,
+      "name": "HDFC Bank (SmartGateway)",
+      "mode": "test",
+      "vpa": "roccoplaywork@hdfcbank",
+      "storeName": "ROCCOPLAY MEDIA"
+    }
+  },
+  "defaultGateway": "hdfc"
+}
+
+--------------------------------------------------------------------------------
+3.2 HDFC BANK PAYMENT APIS
+--------------------------------------------------------------------------------
+
+A. INITIATE HDFC PAYMENT
+Endpoint: POST /api/payment/hdfc/initiate
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <USER_JWT_TOKEN>
+Request Body:
+{
+  "planId": "65b8c9d0e1f2a3b4c5d6e7f8",
+  "promoCode": "DISCOUNT50" // Optional
+}
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "HDFC Bank payment initiated",
+  "paymentUrl": "https://smartgatewayuat.hdfcbank.com/session",
+  "upiDeepLink": "upi://pay?pa=roccoplaywork@hdfcbank&pn=ROCCOPLAY%20MEDIA&am=499&tr=HDFC1787140000000_1234&cu=INR",
+  "orderId": "HDFC1787140000000_1234",
+  "finalAmount": 499,
+  "params": {
+    "merchantId": "HDFC000136707309",
+    "merchantKeyId": "8352000",
+    "orderId": "HDFC1787140000000_1234",
+    "amount": "499",
+    "amountInPaise": "49900",
+    "currency": "INR",
+    "storeName": "ROCCOPLAY MEDIA",
+    "vpa": "roccoplaywork@hdfcbank",
+    "customerEmail": "customer@roccoplay.com",
+    "customerPhone": "9999999999",
+    "customerName": "Customer",
+    "productDescription": "VIP Annual Plan",
+    "returnUrl": "http://192.168.1.21:8000/api/payment/hdfc/callback",
+    "signature": "e9b2072bb46960d709292db3b9ffefbe64765d79679de5cc6bfaefadcd415053"
+  }
+}
+
+B. HDFC CALLBACK
+Endpoint: POST /api/payment/hdfc/callback (and GET fallback)
+HDFC Bank posts payment result. Backend validates signature and activates Subscription in MongoDB.
+
+C. CHECK HDFC STATUS
+Endpoint: GET /api/payment/hdfc/status/{orderId}
+Headers: Authorization: Bearer <USER_JWT_TOKEN>
+
+Response (200 OK):
+{
+  "success": true,
+  "status": "active",
+  "subscription": {
+    "_id": "67b4d123...",
+    "status": "active",
+    "paymentGateway": "hdfc",
+    "paymentId": "HDFCTXN_998877",
+    "subscriptionId": "HDFC1787140000000_1234",
+    "amount": 499
+  }
+}
+
+--------------------------------------------------------------------------------
+3.3 RAZORPAY APIS
+--------------------------------------------------------------------------------
+- POST /api/payment/create-order -> Creates Razorpay order
+- POST /api/payment/verify -> Verifies HMAC signature and activates subscription
+
+--------------------------------------------------------------------------------
+3.4 ZAAKPAY V13 APIS
+--------------------------------------------------------------------------------
+- POST /api/payment/zaakpay/initiate -> Generates Zaakpay V13 payload
+- POST /api/payment/zaakpay/callback -> Callback handler
+- GET /api/payment/zaakpay/status/:orderId -> Status check
+
+================================================================================
+4. GATEWAYS CREDENTIALS & SPECIFICATIONS
+================================================================================
+
+1. HDFC Bank Gateway Credentials:
+   - Store Name: ROCCOPLAY MEDIA
+   - Merchant Virtual Address (VPA): roccoplaywork@hdfcbank
+   - PG Merchant ID: HDFC000136707309
+   - Merchant Key: e47b457824e0d3953d8d466475a62ce5
+   - Merchant Key ID: 8352000
+   - Test URL: https://smartgatewayuat.hdfcbank.com/session
+   - Live URL: https://smartgateway.hdfcbank.com/session
+
+2. Zaakpay UAT Credentials:
+   - Merchant Identifier: b19e8f103bce406cbd3476431b6b7973
+   - Secret Key: 0678056d96914a8583fb518caf42828a
+   - Test URL: https://zaakstaging.zaakpay.com/api/paymentTransact/V13
+   - Test Card: 4111 1111 1111 1111 | CVV: 123 | Expiry: 07/29 | OTP: 1234
+
+3. Razorpay Live Credentials:
+   - Key ID: rzp_live_TLgeS3wdKz2zzf
+   - Key Secret: gz1fKXRfTlVZfGALLhgGpwUF
+
+================================================================================
+5. COMPLETE FLUTTER MOBILE IMPLEMENTATION
+================================================================================
+
+--------------------------------------------------------------------------------
+5.1 Gateway Model
+--------------------------------------------------------------------------------
+// lib/models/payment_gateways_model.dart
+class PaymentGatewaysModel {
+  final bool razorpayEnabled;
+  final String? razorpayKey;
+  final bool zaakpayEnabled;
+  final String zaakpayMode;
+  final bool hdfcEnabled;
+  final String hdfcMode;
+  final String? hdfcVpa;
+  final String defaultGateway;
+
+  PaymentGatewaysModel({
+    required this.razorpayEnabled,
+    this.razorpayKey,
+    required this.zaakpayEnabled,
+    required this.zaakpayMode,
+    required this.hdfcEnabled,
+    required this.hdfcMode,
+    this.hdfcVpa,
+    required this.defaultGateway,
+  });
+
+  factory PaymentGatewaysModel.fromJson(Map<String, dynamic> json) {
+    final gateways = json['gateways'] ?? {};
+    final rzp = gateways['razorpay'] ?? {};
+    final zaak = gateways['zaakpay'] ?? {};
+    final hdfc = gateways['hdfc'] ?? {};
+
+    return PaymentGatewaysModel(
+      razorpayEnabled: rzp['enabled'] == true,
+      razorpayKey: rzp['key'],
+      zaakpayEnabled: zaak['enabled'] == true,
+      zaakpayMode: zaak['mode'] ?? 'test',
+      hdfcEnabled: hdfc['enabled'] == true,
+      hdfcMode: hdfc['mode'] ?? 'test',
+      hdfcVpa: hdfc['vpa'],
+      defaultGateway: json['defaultGateway'] ?? 'razorpay',
+    );
+  }
+
+  String get activeGatewayName {
+    if (razorpayEnabled) return "razorpay";
+    if (zaakpayEnabled) return "zaakpay";
+    if (hdfcEnabled) return "hdfc";
+    return "none";
+  }
+}
+
+--------------------------------------------------------------------------------
+5.2 Payment Service (HTTP Calls for All 3 Gateways)
+--------------------------------------------------------------------------------
+// lib/services/payment_service.dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/payment_gateways_model.dart';
+
+class PaymentService {
+  static const String baseUrl = "http://192.168.1.21:8000/api/payment";
+
+  // 1. Fetch active gateway
+  static Future<PaymentGatewaysModel?> fetchGateways(String token) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/gateways'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        return PaymentGatewaysModel.fromJson(jsonDecode(res.body));
+      }
+    } catch (e) {
+      print("Error fetching active gateway: $e");
+    }
+    return null;
+  }
+
+  // 2. Razorpay APIs
+  static Future<Map<String, dynamic>?> createRazorpayOrder({required String token, required String planId}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/create-order'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'planId': planId}),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception(jsonDecode(res.body)['message'] ?? 'Failed to create Razorpay order');
+  }
+
+  static Future<bool> verifyRazorpayPayment({
+    required String token,
+    required String orderId,
+    required String paymentId,
+    required String signature,
+    required String planId,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/verify'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'razorpay_order_id': orderId, 'razorpay_payment_id': paymentId, 'razorpay_signature': signature, 'planId': planId}),
+    );
+    return res.statusCode == 200;
+  }
+
+  // 3. Zaakpay APIs
+  static Future<Map<String, dynamic>?> initiateZaakpayPayment({required String token, required String planId}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/zaakpay/initiate'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'planId': planId}),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception(jsonDecode(res.body)['message'] ?? 'Failed to initiate Zaakpay payment');
+  }
+
+  static Future<bool> checkZaakpayStatus(String token, String orderId) async {
+    final res = await http.get(Uri.parse('$baseUrl/zaakpay/status/$orderId'), headers: {'Authorization': 'Bearer $token'});
+    return res.statusCode == 200;
+  }
+
+  // 4. HDFC Bank APIs
+  // Returns: { success, orderId, finalAmount, paymentUrl, sdkPayload }
+  // sdkPayload is passed directly to HyperCheckout.openPaymentPage()
+  static Future<Map<String, dynamic>?> initiateHdfcPayment({required String token, required String planId}) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/hdfc/initiate'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'planId': planId}),
+    );
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception(jsonDecode(res.body)['message'] ?? 'Failed to initiate HDFC payment');
+  }
+
+  static Future<bool> checkHdfcStatus(String token, String orderId) async {
+    final res = await http.get(Uri.parse('$baseUrl/hdfc/status/$orderId'), headers: {'Authorization': 'Bearer $token'});
+    if (res.statusCode != 200) return false;
+    final data = jsonDecode(res.body);
+    return data['status'] == 'active';
+  }
+}
+
+--------------------------------------------------------------------------------
+5.3 Complete Subscription Checkout Screen
+--------------------------------------------------------------------------------
+// lib/screens/subscription_checkout_screen.dart
+//
+// pubspec.yaml dependencies needed:
+//   hypercheckout_flutter: ^1.0.0   # HDFC HyperCheckout Flutter SDK
+//   razorpay_flutter: ^1.3.7
+//   http: ^1.0.0
+//   webview_flutter: ^4.0.0         # still needed for Zaakpay only
+//
+import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:hypercheckout_flutter/hypercheckout_flutter.dart'; // HDFC SDK
+import '../models/payment_gateways_model.dart';
+import '../services/payment_service.dart';
+import 'zaakpay_webview_screen.dart'; // still used for Zaakpay only
+
+class SubscriptionCheckoutScreen extends StatefulWidget {
+  final String token;
+  final String planId;
+  final String planName;
+  final double planPrice;
+
+  const SubscriptionCheckoutScreen({
+    Key? key,
+    required this.token,
+    required this.planId,
+    required this.planName,
+    required this.planPrice,
+  }) : super(key: key);
+
+  @override
+  _SubscriptionCheckoutScreenState createState() => _SubscriptionCheckoutScreenState();
+}
+
+class _SubscriptionCheckoutScreenState extends State<SubscriptionCheckoutScreen> {
+  PaymentGatewaysModel? _gateways;
+  bool _loading = true;
+  bool _processing = false;
+  late Razorpay _razorpay;
+  String? _currentOrderId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRazorpay();
+    _loadGateways();
+  }
+
+  void _initRazorpay() {
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (res) async {
+      setState(() => _processing = true);
+      final ok = await PaymentService.verifyRazorpayPayment(
+        token: widget.token,
+        orderId: res.orderId ?? _currentOrderId ?? '',
+        paymentId: res.paymentId ?? '',
+        signature: res.signature ?? '',
+        planId: widget.planId,
+      );
+      setState(() => _processing = false);
+      if (ok) _showSuccessDialog("Razorpay");
+    });
+  }
+
+  void _loadGateways() async {
+    final g = await PaymentService.fetchGateways(widget.token);
+    setState(() {
+      _gateways = g;
+      _loading = false;
+    });
+  }
+
+  void _pay() {
+    if (_gateways == null) return;
+    if (_gateways!.razorpayEnabled) {
+      _payRazorpay();
+    } else if (_gateways!.zaakpayEnabled) {
+      _payZaakpay();
+    } else if (_gateways!.hdfcEnabled) {
+      _payHdfc();
+    }
+  }
+
+  void _payRazorpay() async {
+    setState(() => _processing = true);
+    final res = await PaymentService.createRazorpayOrder(token: widget.token, planId: widget.planId);
+    setState(() => _processing = false);
+    if (res != null && res['success'] == true) {
+      _currentOrderId = res['order']['id'];
+      _razorpay.open({
+        'key': res['key'],
+        'amount': res['order']['amount'],
+        'name': 'ChulbulPlay',
+        'order_id': _currentOrderId,
+        'description': widget.planName,
+        'theme': {'color': '#E50914'},
+      });
+    }
+  }
+
+  void _payZaakpay() async {
+    setState(() => _processing = true);
+    final res = await PaymentService.initiateZaakpayPayment(token: widget.token, planId: widget.planId);
+    setState(() => _processing = false);
+    if (res != null && res['success'] == true) {
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => ZaakpayWebViewScreen(
+            token: widget.token,
+            paymentUrl: res['paymentUrl'],
+            orderId: res['orderId'],
+            params: Map<String, dynamic>.from(res['params']),
+          ),
+        ),
+      );
+      if (ok == true) _showSuccessDialog("Zaakpay");
+    }
+  }
+
+  // ─── HDFC Bank: uses native HyperCheckout Flutter SDK ───────────────────────
+  // HDFC docs: Step 2 — call openPaymentPage(sdkPayload) after backend creates session.
+  // The SDK renders the full payment UI natively (no WebView).
+  // After payment, Step 3 — verify via server-side Order Status API.
+  void _payHdfc() async {
+    setState(() => _processing = true);
+    try {
+      final res = await PaymentService.initiateHdfcPayment(
+        token: widget.token,
+        planId: widget.planId,
+      );
+      setState(() => _processing = false);
+
+      if (res == null || res['success'] != true) return;
+
+      final sdkPayload = res['sdkPayload'];
+      if (sdkPayload == null) {
+        // Fallback: should not happen in production — sdkPayload missing means
+        // either HDFC credentials wrong or session creation failed.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('HDFC payment could not be initialised. Please try again.')),
+        );
+        return;
+      }
+
+      // Step 2: Open HDFC HyperCheckout payment page via native Flutter SDK
+      final result = await HyperCheckout.openPaymentPage(
+        sdkPayload: sdkPayload,
+      );
+
+      // Step 3: Always verify via server-side Order Status (never trust SDK response alone)
+      if (result.status == HyperCheckoutStatus.charged ||
+          result.status == HyperCheckoutStatus.success) {
+        setState(() => _processing = true);
+        final ok = await PaymentService.checkHdfcStatus(widget.token, res['orderId']);
+        setState(() => _processing = false);
+        if (ok) _showSuccessDialog("HDFC Bank");
+      } else if (result.status == HyperCheckoutStatus.pending) {
+        // Payment may still complete via callback — poll status
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment is pending. Your subscription will activate once confirmed.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment ${result.status?.name ?? "not completed"}. Please try again.')),
+        );
+      }
+    } catch (e) {
+      setState(() => _processing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('HDFC payment error: $e')),
+      );
+    }
+  }
+
+  void _showSuccessDialog(String pg) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF131A29),
+        title: const Text("🎉 Subscription Activated!", style: TextStyle(color: Colors.white)),
+        content: Text("Payment via $pg was successful and your subscription is active.", style: const TextStyle(color: Color(0xFFCBD5E1))),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE50914)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context, true);
+            },
+            child: const Text("Continue Watching", style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(backgroundColor: Color(0xFF0B0F1A), body: Center(child: CircularProgressIndicator(color: Color(0xFFE50914))));
+    }
+
+    String title = "Razorpay";
+    String subtitle = "UPI, Cards, Netbanking";
+    Color iconColor = Colors.blueAccent;
+
+    if (_gateways?.zaakpayEnabled == true) {
+      title = "Zaakpay";
+      subtitle = "Zaakpay Hosted Payment Gateway";
+      iconColor = Colors.purpleAccent;
+    } else if (_gateways?.hdfcEnabled == true) {
+      title = "HDFC Bank";
+      subtitle = "SmartGateway & Direct UPI (${_gateways?.hdfcVpa ?? 'HDFC'})";
+      iconColor = Colors.redAccent;
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B0F1A),
+      appBar: AppBar(title: const Text("Checkout"), backgroundColor: const Color(0xFF0B0F1A), foregroundColor: Colors.white),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Plan Info
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(color: const Color(0xFF131A29), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(widget.planName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("₹${widget.planPrice.toInt()}", style: const TextStyle(color: Color(0xFFE50914), fontSize: 22, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text("Active Payment Gateway", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+
+            // Active Gateway Tile
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131A29),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF22C55E), width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.payment, color: iconColor, size: 28),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                        Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 22),
+                ],
+              ),
+            ),
+
+            const Spacer(),
+
+            // Pay Button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE50914), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: !_processing ? _pay : null,
+                child: Text("PAY ₹${widget.planPrice.toInt()} NOW", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+================================================================================
