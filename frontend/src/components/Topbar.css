@@ -323,6 +323,10 @@ body.light .toggle-track {
   z-index: 999;
 }
 
+body.light .profile-overlay {
+  background: rgba(241, 245, 249, 0.7);
+}
+
 .profile-card {
   width: 420px;
   background: rgba(22, 28, 45, 0.7);
@@ -338,6 +342,14 @@ body.light .toggle-track {
   color: var(--text);
 }
 
+body.light .profile-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.08),
+    0 16px 48px rgba(0, 0, 0, 0.1);
+}
+
 /* Header */
 .profile-header {
   display: flex;
@@ -346,6 +358,10 @@ body.light .toggle-track {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding-bottom: 20px;
   margin-bottom: 28px;
+}
+
+body.light .profile-header {
+  border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
 .profile-header h2 {
@@ -368,6 +384,11 @@ body.light .toggle-track {
   justify-content: center;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.light .profile-close-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: #f1f5f9;
 }
 
 .profile-close-btn:hover {
@@ -427,6 +448,11 @@ body.light .toggle-track {
   z-index: 1;
 }
 
+body.light .profile-avatar {
+  border-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
 .profile-status-badge {
   position: absolute;
   bottom: -8px;
@@ -443,6 +469,12 @@ body.light .toggle-track {
   gap: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   z-index: 2;
+}
+
+body.light .profile-status-badge {
+  background: #f0fdf4;
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 .pulse-dot {
@@ -501,11 +533,22 @@ body.light .toggle-track {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+body.light .profile-info-card {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.07);
+}
+
 .profile-info-card:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.light .profile-info-card:hover {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
 }
 
 .info-card-icon-wrapper {
@@ -520,6 +563,11 @@ body.light .toggle-track {
   color: var(--text-muted);
   flex-shrink: 0;
   transition: all 0.25s;
+}
+
+body.light .info-card-icon-wrapper {
+  background: #e2e8f0;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .profile-info-card:hover .info-card-icon-wrapper {
@@ -571,6 +619,12 @@ body.light .toggle-track {
   padding: 10px;
   z-index: 1000;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+body.light .search-dropdown {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .search-item {

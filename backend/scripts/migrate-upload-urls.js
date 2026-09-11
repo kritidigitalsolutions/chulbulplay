@@ -21,7 +21,7 @@ if (!BUNNY_CDN_URL) {
 const migrateUrl = (val) => {
   if (!val || typeof val !== "string") return val;
   if (/^(https?:\/\/|data:|blob:|\/\/)/i.test(val)) return val; // Already a URL
-  
+
   if (val.startsWith("/uploads/") || val.startsWith("uploads/")) {
     const cleanPath = val.replace(/^\/?uploads\//, "");
     return `${BUNNY_CDN_URL}/${cleanPath}`;

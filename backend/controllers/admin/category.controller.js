@@ -3,8 +3,8 @@ const Category = require("../../models/category.model");
 // ─── SEED DEFAULT CATEGORIES ────────────────────────────
 exports.seedDefaults = async () => {
   const defaults = [
-    { name: "Trending",    slug: "trending",    color: "#f59e0b" },
-    { name: "Top 10",      slug: "top10",       color: "#ef4444" },
+    { name: "Trending", slug: "trending", color: "#f59e0b" },
+    { name: "Top 10", slug: "top10", color: "#ef4444" },
     { name: "Recommended", slug: "recommended", color: "#10b981" },
   ];
   for (const cat of defaults) {
@@ -128,7 +128,7 @@ exports.deleteCategory = async (req, res) => {
     }
 
     // Remove slug from all Movies & Series that used this category
-    const Movie  = require("../../models/movie.model");
+    const Movie = require("../../models/movie.model");
     const Series = require("../../models/series.model");
     await Movie.updateMany(
       { category: category.slug },

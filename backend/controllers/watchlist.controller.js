@@ -14,7 +14,7 @@ const addToWatchlist = async (req, res) => {
     // Auto-detect type
     let itemModel = "";
     const isMovie = await Movie.exists({ _id: itemId });
-    
+
     if (isMovie) {
       itemModel = "Movie";
     } else {

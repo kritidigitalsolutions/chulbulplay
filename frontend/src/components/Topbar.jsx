@@ -6,23 +6,23 @@ import API from "../api/axios";
 
 // Type → colour mapping (matches Notifications page)
 const TYPE_COLORS = {
-  GENERAL:     { bg: "rgba(100,116,139,0.2)", color: "#94a3b8" },
-  SYSTEM:      { bg: "rgba(59,130,246,0.2)",  color: "#3b82f6" },
-  PLAN:        { bg: "rgba(139,92,246,0.2)",  color: "#8b5cf6" },
-  PROMOTIONAL: { bg: "rgba(245,158,11,0.2)",  color: "#f59e0b" },
+  GENERAL: { bg: "rgba(100,116,139,0.2)", color: "#94a3b8" },
+  SYSTEM: { bg: "rgba(59,130,246,0.2)", color: "#3b82f6" },
+  PLAN: { bg: "rgba(139,92,246,0.2)", color: "#8b5cf6" },
+  PROMOTIONAL: { bg: "rgba(245,158,11,0.2)", color: "#f59e0b" },
 };
 
 export default function Topbar({ theme, toggleTheme, toggleSidebar }) {
   const navigate = useNavigate();
   const [adminName, setAdminName] = useState("Admin");
   const [adminData, setAdminData] = useState(null);
-  const [search, setSearch]       = useState("");
-  const [results, setResults]     = useState([]);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState([]);
 
   // ── Notification state ──────────────────────────────────────────────
-  const [notifCount,   setNotifCount]   = useState(0);
-  const [notifList,    setNotifList]    = useState([]);
-  const [notifOpen,    setNotifOpen]    = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifList, setNotifList] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const notifRef = useRef(null);
 
@@ -90,34 +90,34 @@ export default function Topbar({ theme, toggleTheme, toggleSidebar }) {
   }, []);
 
   const handleSearch = async (value) => {
-  setSearch(value);
+    setSearch(value);
 
-  if (!value) {
+    if (!value) {
+      setResults([]);
+      return;
+    }
+
+    try {
+      const res = await API.get(`/admin/search?q=${value}`);
+      setResults(res.data.data);
+    } catch (err) {
+      console.error("Search error:", err);
+    }
+  };
+  const handleSelect = (item) => {
+    if (item.type === "User") {
+      navigate("/dashboard/users");
+    }
+    else if (item.type === "Movie") {
+      navigate("/dashboard/content");
+    }
+    else if (item.type === "Help") {
+      navigate("/dashboard/help");
+    }
+
+    setSearch("");
     setResults([]);
-    return;
-  }
-
-  try {
-    const res = await API.get(`/admin/search?q=${value}`);
-    setResults(res.data.data);
-  } catch (err) {
-    console.error("Search error:", err);
-  }
-};
-const handleSelect = (item) => {
-  if (item.type === "User") {
-    navigate("/dashboard/users");
-  } 
-  else if (item.type === "Movie") {
-    navigate("/dashboard/content");
-  } 
-  else if (item.type === "Help") {
-    navigate("/dashboard/help");
-  }
-
-  setSearch("");
-  setResults([]);
-};
+  };
 
   // ================= LOGOUT =================
   const handleLogout = () => {
@@ -171,29 +171,29 @@ const handleSelect = (item) => {
             />
           </div> */}
           <div className="topbar-search" style={{ position: "relative" }}>
-  <Search size={18} className="search-ico" />
+            <Search size={18} className="search-ico" />
 
-  <input
-    type="text"
-    placeholder="Search anything..."
-    value={search}
-    onChange={(e) => handleSearch(e.target.value)}
-  />
+            <input
+              type="text"
+              placeholder="Search anything..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
 
-  {/* 🔥 SEARCH RESULTS */}
-  {results.length > 0 && (
-    <div className="search-dropdown">
-      {results.map((item, i) => (
-        <div key={i} className="search-item" onClick={() => handleSelect(item)}>
-          <strong>{item.title || item.name}</strong>
-          <p style={{ fontSize: "12px", opacity: 0.7 }}>
-            {item.type}
-          </p>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+            {/* 🔥 SEARCH RESULTS */}
+            {results.length > 0 && (
+              <div className="search-dropdown">
+                {results.map((item, i) => (
+                  <div key={i} className="search-item" onClick={() => handleSelect(item)}>
+                    <strong>{item.title || item.name}</strong>
+                    <p style={{ fontSize: "12px", opacity: 0.7 }}>
+                      {item.type}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* ── Notification Bell ── */}
           <div className="notif-bell-wrap" ref={notifRef}>
