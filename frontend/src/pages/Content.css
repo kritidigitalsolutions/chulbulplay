@@ -513,6 +513,15 @@ body.light .tbl tbody tr:hover {
   border-color: rgba(234, 179, 8, 0.3);
 }
 
+.icon-btn.del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
 .icon-btn.del:hover {
   background: var(--primary-dim);
   color: var(--primary);
@@ -1422,6 +1431,7 @@ body.light .add-form-card {
 
 .ep-actions {
   display: flex;
+  align-items: center;
   gap: 6px;
   opacity: 0.7;
   transition: all 0.2s ease;

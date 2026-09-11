@@ -173,14 +173,15 @@ export default function CompanyInfo() {
       <div className="company-grid">
         {/* Left Side: Form Panel */}
         <div className="company-card">
-          <div>
+          <div className="company-card-header">
             <h3>
-              <Building2 size={20} style={{ color: "var(--primary)" }} /> Address & Contact Info
+              <Building2 size={20} style={{ color: "var(--primary)" }} /> Address &amp; Contact Info
             </h3>
             <p className="company-card-subtitle">
               Fill in your business details. This will be visible on client portals when published.
             </p>
           </div>
+
 
           <form onSubmit={handleSubmit} className="company-form">
             <div className="form-group">

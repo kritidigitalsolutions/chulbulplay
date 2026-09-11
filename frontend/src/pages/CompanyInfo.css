@@ -49,13 +49,19 @@
   gap: 10px;
 }
 
+/* Card section header — title + subtitle with a divider below */
+.company-card-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
 .company-card-subtitle {
   font-size: 0.88rem;
   color: var(--text-soft);
-  margin-top: -16px;
-  margin-bottom: 8px;
+  margin-top: 6px;
   line-height: 1.4;
 }
+
 
 /* Form Styles */
 .company-form {
@@ -323,6 +329,12 @@ input:checked + .switch-slider:before {
   font-size: 1.3rem;
   font-weight: 800;
   background: linear-gradient(90deg, #ffffff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light .preview-title {
+  background: linear-gradient(90deg, #0f172a 0%, #4f46e5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
