@@ -7,10 +7,10 @@ const adminOtpSchema = new mongoose.Schema(
     purpose: {
       type: String,
       enum: [
-  "change-password",
-  "change-email",
-  "forgot-password"
-]
+        "change-password",
+        "change-email",
+        "forgot-password"
+      ]
     },
     newEmail: {
       type: String,

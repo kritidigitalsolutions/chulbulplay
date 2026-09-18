@@ -2,12 +2,12 @@ const MB = 1024 * 1024;
 const GB = 1024 * MB;
 
 const limits = {
-  poster:       5  * MB,
-  banner:       5  * MB,
-  thumbnail:    5  * MB,
-  profileImage: 2  * MB,
-  trailer:      5  * GB,  // 5 GB
-  video:        5  * GB,  // 5 GB
+  poster: 5 * MB,
+  banner: 5 * MB,
+  thumbnail: 5 * MB,
+  profileImage: 2 * MB,
+  trailer: 5 * GB,  // 5 GB
+  video: 5 * GB,  // 5 GB
 };
 
 function validateSingle(file, field) {

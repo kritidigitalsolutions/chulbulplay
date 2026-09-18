@@ -10,12 +10,6 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const axios = require("axios");
 
-const DUMMY_OTP_PHONE = "+919999999999";
-const DUMMY_OTP_CODE = "123456";
-
-const isDummyOtpPhone = (phone) =>
-  phone === DUMMY_OTP_PHONE;
-
 // ========================================
 // FORMAT INDIAN PHONE
 // ========================================
@@ -37,6 +31,33 @@ const formatIndianPhone = (phone) => {
   }
 
   return phone;
+};
+
+// ========================================
+// TEST USER CONFIGURATION
+// Configurable via .env:
+// - ENABLE_TEST_USER (true/false)
+// - TEST_USER_PHONE (e.g. 9999999999)
+// - TEST_USER_OTP (e.g. 123456)
+// ========================================
+const isTestUserEnabled = () => {
+  return process.env.ENABLE_TEST_USER !== "false";
+};
+
+const getTestUserPhone = () => {
+  const phone = process.env.TEST_USER_PHONE || "9999999999";
+  return formatIndianPhone(phone);
+};
+
+const getTestUserOtp = () => {
+  return String(process.env.TEST_USER_OTP || "123456").trim();
+};
+
+const isTestUserPhone = (phone) => {
+  if (!isTestUserEnabled()) return false;
+  const normalizedInput = formatIndianPhone(phone);
+  const testPhone = getTestUserPhone();
+  return normalizedInput === testPhone;
 };
 // ========================================
 // SEND SMS
@@ -167,11 +188,11 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
-    const isDummyPhone =
-      isDummyOtpPhone(normalizedPhone);
+    const isTestUser =
+      isTestUserPhone(normalizedPhone);
 
     // rate limit
-    if (!isDummyPhone) {
+    if (!isTestUser) {
       const recentOtp =
         await OTP.findOne({
           phone: normalizedPhone,
@@ -191,13 +212,13 @@ exports.sendOTP = async (req, res) => {
       }
     }
 
-    const otp = isDummyPhone
-      ? DUMMY_OTP_CODE
+    const otp = isTestUser
+      ? getTestUserOtp()
       : Math.floor(
           100000 + Math.random() * 900000
         ).toString();
 
-    if (isDummyPhone) {
+    if (isTestUser) {
       await User.updateOne(
         { phone: normalizedPhone },
         {
@@ -239,31 +260,31 @@ exports.sendOTP = async (req, res) => {
     const isNewUser =
       !user || !user.profileComplete;
 
-    // console otp
- const smsSent =
-  isDummyPhone ||
-  (await sendSMS(
-    normalizedPhone,
-    otp
-  ));
+    // Send SMS (skip SMS API call for test user)
+    const smsSent =
+      isTestUser ||
+      (await sendSMS(
+        normalizedPhone,
+        otp
+      ));
 
-if (!smsSent) {
-  return res.status(500).json({
-    success: false,
-    message:
-      "Failed to send OTP",
-  });
-}
+    if (!smsSent) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to send OTP",
+      });
+    }
 
-console.log(
-  `📱 OTP for ${normalizedPhone}: ${otp}`
-);
+    console.log(
+      `📱 OTP for ${normalizedPhone}: ${otp}${isTestUser ? " (TEST USER)" : ""}`
+    );
 
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
       isNewUser,
-      ...((process.env.NODE_ENV !== "production" || isDummyPhone) && { otp }),
+      ...((process.env.NODE_ENV !== "production" || isTestUser) && { otp }),
     });
 
   } catch (error) {
@@ -302,11 +323,21 @@ exports.verifyOtp = async (req, res) => {
       otp
     ).trim();
 
-    const isDummyOtp =
-      isDummyOtpPhone(normalizedPhone) &&
-      normalizedOtp === DUMMY_OTP_CODE;
+    const isTestUser =
+      isTestUserPhone(normalizedPhone);
+    const isTestOtpValid =
+      isTestUser && normalizedOtp === getTestUserOtp();
 
-    const otpRecord = isDummyOtp
+    // If test user and wrong OTP, reject immediately
+    if (isTestUser && !isTestOtpValid) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid or expired OTP",
+      });
+    }
+
+    const otpRecord = isTestUser
       ? null
       : await OTP.findOne({
         phone: normalizedPhone,
@@ -318,8 +349,8 @@ exports.verifyOtp = async (req, res) => {
         createdAt: -1,
       });
 
-    // wrong otp
-    if (!isDummyOtp && !otpRecord) {
+    // wrong otp for normal user
+    if (!isTestUser && !otpRecord) {
       const existing =
         await OTP.findOne({
           phone: normalizedPhone,

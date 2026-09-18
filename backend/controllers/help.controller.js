@@ -5,9 +5,9 @@ exports.getAllHelp = async (req, res) => {
   try {
     const data = await Help.find({ category: { $ne: "contact-info" } }).sort("-createdAt");
     res.status(200).json({ data });
-    } catch (error) {
+  } catch (error) {
     res.status(500).json({ message: error.message });
-    }
+  }
 };
 
 // 👀 GET BY CATEGORY (ONLY PUBLISHED)

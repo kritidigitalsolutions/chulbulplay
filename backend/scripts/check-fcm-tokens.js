@@ -30,7 +30,7 @@ const run = async () => {
     const result = await sendPushNotification({
       token: user.fcmToken,
       title: '🔔 Test Notification',
-      body: 'Agar yeh popup mein dikh raha hai toh backend bilkul sahi hai!',
+      body: 'If it’s showing up in the popup, then the backend is working perfectly!',
       data: { type: 'TEST' }
     });
     console.log(`Push → ${user.phone}:`, JSON.stringify(result));

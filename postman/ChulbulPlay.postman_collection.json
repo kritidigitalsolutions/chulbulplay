@@ -6,14 +6,38 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5000" },
-    { "key": "adminEmail", "value": "" },
-    { "key": "adminPassword", "value": "" },
-    { "key": "adminToken", "value": "" },
-    { "key": "userToken", "value": "" },
-    { "key": "id", "value": "" },
-    { "key": "contentId", "value": "" },
-    { "key": "orderId", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": ""
+    },
+    {
+      "key": "contentId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -21,7 +45,10 @@
       "item": [
         {
           "name": "Server health check",
-          "request": { "method": "GET", "url": "{{baseUrl}}/" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/"
+          }
         }
       ]
     },
@@ -30,146 +57,1160 @@
       "item": [
         {
           "name": "Login",
-          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const body = pm.response.json();", "if (body.token) pm.collectionVariables.set('adminToken', body.token);"] } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) pm.collectionVariables.set('adminToken', body.token);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
             "url": "{{baseUrl}}/api/admin/auth/login"
           }
         },
         {
           "name": "My profile",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/auth/profile" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/auth/profile"
+          }
         },
         {
           "name": "Content stats",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/content/stats" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/content/stats"
+          }
         },
         {
           "name": "All content",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/content/all" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/content/all"
+          }
         },
         {
           "name": "Payment settings",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/payment-settings" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/payment-settings"
+          }
         },
         {
           "name": "Subscription statistics",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/subscription/stats" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/subscription/stats"
+          }
         },
         {
           "name": "Subscription revenue",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/subscription/revenue" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/subscription/revenue"
+          }
         },
         {
           "name": "Plans",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/plan" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/plan"
+          }
         },
         {
           "name": "Promos",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/promo" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/promo"
+          }
         },
         {
           "name": "Vouchers",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/voucher" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/voucher"
+          }
         },
         {
           "name": "Categories",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/categories" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/categories"
+          }
         },
         {
           "name": "Users",
-          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/admin/users" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users"
+          }
         },
         {
           "name": "Send notification",
-          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{adminToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Test notification\",\n  \"message\": \"Sent from Postman\"\n}" }, "url": "{{baseUrl}}/api/admin/notifications/send" }
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test notification\",\n  \"message\": \"Sent from Postman\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/notifications/send"
+          }
         }
       ]
     },
     {
       "name": "Public content",
       "item": [
-        { "name": "Home content", "request": { "method": "GET", "url": "{{baseUrl}}/api/content" } },
-        { "name": "Search content", "request": { "method": "GET", "url": "{{baseUrl}}/api/content/search?query=test" } },
-        { "name": "Movies", "request": { "method": "GET", "url": "{{baseUrl}}/api/movies" } },
-        { "name": "Movie by ID", "request": { "method": "GET", "url": "{{baseUrl}}/api/movies/id/{{id}}" } },
-        { "name": "Series", "request": { "method": "GET", "url": "{{baseUrl}}/api/series" } },
-        { "name": "Series by ID", "request": { "method": "GET", "url": "{{baseUrl}}/api/series/{{id}}" } },
-        { "name": "Categories", "request": { "method": "GET", "url": "{{baseUrl}}/api/categories" } },
-        { "name": "Available plans", "request": { "method": "GET", "url": "{{baseUrl}}/api/plan" } },
-        { "name": "Active payment gateways", "request": { "method": "GET", "url": "{{baseUrl}}/api/payment/gateways" } }
+        {
+          "name": "Home content",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/content"
+          }
+        },
+        {
+          "name": "Search content",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/content/search?query=test"
+          }
+        },
+        {
+          "name": "Movies",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/movies"
+          }
+        },
+        {
+          "name": "Movie by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/movies/id/{{id}}"
+          }
+        },
+        {
+          "name": "Series",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/series"
+          }
+        },
+        {
+          "name": "Series by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/series/{{id}}"
+          }
+        },
+        {
+          "name": "Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/categories"
+          }
+        },
+        {
+          "name": "Available plans",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/plan"
+          }
+        },
+        {
+          "name": "Active payment gateways",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/payment/gateways"
+          }
+        }
       ]
     },
     {
       "name": "User authentication",
       "item": [
-        { "name": "Send OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+919999999999\"\n}" }, "url": "{{baseUrl}}/api/auth/send-otp" } },
-        { "name": "Verify OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+919999999999\",\n  \"otp\": \"123456\"\n}" }, "url": "{{baseUrl}}/api/auth/verify-otp" } },
-        { "name": "Google login", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"idToken\": \"\"\n}" }, "url": "{{baseUrl}}/api/auth/google-login" } }
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/send-otp"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/verify-otp"
+          }
+        },
+        {
+          "name": "Google login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/google-login"
+          }
+        }
       ]
     },
     {
       "name": "Authenticated user",
       "item": [
-        { "name": "My watchlist", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/watchlist" } },
-        { "name": "Add to watchlist", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{userToken}}" }], "body": { "mode": "raw", "raw": "{\n  \"contentId\": \"{{contentId}}\"\n}" }, "url": "{{baseUrl}}/api/watchlist" } },
-        { "name": "Subscription status", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/subscription/status" } },
-        { "name": "My notifications", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/notifications" } },
-        { "name": "Interaction statistics", "request": { "method": "GET", "url": "{{baseUrl}}/api/interaction/stats/{{contentId}}" } }
+        {
+          "name": "My watchlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/watchlist"
+          }
+        },
+        {
+          "name": "Add to watchlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{contentId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/watchlist"
+          }
+        },
+        {
+          "name": "Subscription status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/subscription/status"
+          }
+        },
+        {
+          "name": "My notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications"
+          }
+        },
+        {
+          "name": "Interaction statistics",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/interaction/stats/{{contentId}}"
+          }
+        }
       ]
     },
     {
-      "name": "User Features", "item": [
-        {"name":"User profile","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/user/profile"}},
-        {"name":"Complete profile","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"name","value":"Test User","type":"text"},{"key":"email","value":"test@example.com","type":"text"},{"key":"profileImage","type":"file","src":""}]},"url":"{{baseUrl}}/api/user/complete-profile"}},
-        {"name":"Update profile","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"name","value":"Updated User","type":"text"},{"key":"profileImage","type":"file","src":""}]},"url":"{{baseUrl}}/api/user/update-profile"}},
-        {"name":"Save FCM token","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"fcmToken\": \"YOUR_FCM_TOKEN\"\n}"},"url":"{{baseUrl}}/api/user/fcm-token"}},
-        {"name":"Rate content","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"contentId\": \"{{contentId}}\",\n  \"rating\": 5,\n  \"review\": \"Excellent\"\n}"},"url":"{{baseUrl}}/api/rating/rate"}},
-        {"name":"Toggle interaction","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"contentId\": \"{{contentId}}\",\n  \"contentType\": \"movie\",\n  \"type\": \"like\"\n}"},"url":"{{baseUrl}}/api/interaction/toggle"}},
-        {"name":"My interaction","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/interaction/status/{{contentId}}"}},
-        {"name":"Apply promo","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"code\": \"WELCOME10\",\n  \"planId\": \"{{id}}\"\n}"},"url":"{{baseUrl}}/api/promo/apply"}},
-        {"name":"Redeem voucher","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"code\": \"VOUCHER10\"\n}"},"url":"{{baseUrl}}/api/voucher/redeem"}},
-        {"name":"Subscribe","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"subscriptionId\": \"{{id}}\",\n  \"platform\": \"app\"\n}"},"url":"{{baseUrl}}/api/subscription/subscribe"}},
-        {"name":"Cancel subscription","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/subscription/cancel"}},
-        {"name":"Unread notifications","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/notifications/unread-count"}},
-        {"name":"Mark all notifications read","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/notifications/read-all"}},
-        {"name":"Mark notification read","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/notifications/{{id}}/read"}},
-        {"name":"Delete notification","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/notifications/{{id}}"}}
+      "name": "User Features",
+      "item": [
+        {
+          "name": "User profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/user/profile"
+          }
+        },
+        {
+          "name": "Complete profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Test User",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "test@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/user/complete-profile"
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Updated User",
+                  "type": "text"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/user/update-profile"
+          }
+        },
+        {
+          "name": "Save FCM token",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcmToken\": \"YOUR_FCM_TOKEN\"\n}"
+            },
+            "url": "{{baseUrl}}/api/user/fcm-token"
+          }
+        },
+        {
+          "name": "Rate content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{contentId}}\",\n  \"rating\": 5,\n  \"review\": \"Excellent\"\n}"
+            },
+            "url": "{{baseUrl}}/api/rating/rate"
+          }
+        },
+        {
+          "name": "Toggle interaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentId\": \"{{contentId}}\",\n  \"contentType\": \"movie\",\n  \"type\": \"like\"\n}"
+            },
+            "url": "{{baseUrl}}/api/interaction/toggle"
+          }
+        },
+        {
+          "name": "My interaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/interaction/status/{{contentId}}"
+          }
+        },
+        {
+          "name": "Apply promo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"WELCOME10\",\n  \"planId\": \"{{id}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/promo/apply"
+          }
+        },
+        {
+          "name": "Redeem voucher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"VOUCHER10\"\n}"
+            },
+            "url": "{{baseUrl}}/api/voucher/redeem"
+          }
+        },
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriptionId\": \"{{id}}\",\n  \"platform\": \"app\"\n}"
+            },
+            "url": "{{baseUrl}}/api/subscription/subscribe"
+          }
+        },
+        {
+          "name": "Cancel subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/subscription/cancel"
+          }
+        },
+        {
+          "name": "Unread notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/unread-count"
+          }
+        },
+        {
+          "name": "Mark all notifications read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/read-all"
+          }
+        },
+        {
+          "name": "Mark notification read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/{{id}}/read"
+          }
+        },
+        {
+          "name": "Delete notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/{{id}}"
+          }
+        }
       ]
     },
     {
-      "name":"Payments", "item":[
-        {"name":"Create order","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"raw","raw":"{\n  \"planId\": \"{{id}}\"\n}"},"url":"{{baseUrl}}/api/payment/create-order"}},
-        {"name":"Initiate SabPaisa","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"raw","raw":"{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\",\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"+919999999999\"\n}"},"url":"{{baseUrl}}/api/payment/sabpaisa/initiate"}},
-        {"name":"Initiate payment (legacy)","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"raw","raw":"{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\"\n}"},"url":"{{baseUrl}}/api/payment/initiate"}},
-        {"name":"SabPaisa return","request":{"method":"GET","url":"{{baseUrl}}/api/payment/sabpaisa/return"}},
-        {"name":"SabPaisa webhook","request":{"method":"POST","body":{"mode":"raw","raw":"{}"},"url":"{{baseUrl}}/api/payment/sabpaisa/webhook"}},
-        {"name":"SabPaisa status","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],"url":"{{baseUrl}}/api/payment/sabpaisa/status/{{orderId}}"}},
-        {"name":"Verify payment","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"Authorization","value":"Bearer {{userToken}}"}],"body":{"mode":"raw","raw":"{\n  \"orderId\": \"{{orderId}}\",\n  \"paymentId\": \"PAYMENT_ID\",\n  \"signature\": \"SIGNATURE\"\n}"},"url":"{{baseUrl}}/api/payment/verify"}}
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{id}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/create-order"
+          }
+        },
+        {
+          "name": "Initiate SabPaisa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\",\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"+919999999999\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/sabpaisa/initiate"
+          }
+        },
+        {
+          "name": "Initiate payment (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/initiate"
+          }
+        },
+        {
+          "name": "SabPaisa return",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/payment/sabpaisa/return"
+          }
+        },
+        {
+          "name": "SabPaisa webhook",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/api/payment/sabpaisa/webhook"
+          }
+        },
+        {
+          "name": "SabPaisa status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/payment/sabpaisa/status/{{orderId}}"
+          }
+        },
+        {
+          "name": "Verify payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"paymentId\": \"PAYMENT_ID\",\n  \"signature\": \"SIGNATURE\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/verify"
+          }
+        }
       ]
     },
     {
-      "name":"Admin Media", "item":[
-        {"name":"Create movie","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"title","value":"Test Movie","type":"text"},{"key":"description","value":"A movie created through Postman","type":"text"},{"key":"genre","value":"[\"Action\"]","type":"text"},{"key":"category","value":"[\"trending\"]","type":"text"},{"key":"isPublished","value":"true","type":"text"},{"key":"videoUrl","value":"https://example.com/movie.mp4","type":"text"}]},"url":"{{baseUrl}}/api/admin/movies/add"}},
-        {"name":"Admin movies","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/movies?page=1&limit=10"}},
-        {"name":"Search movies","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/movies/search?q=Test"}},
-        {"name":"Update movie","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"title","value":"Updated Movie","type":"text"},{"key":"videoUrl","value":"https://example.com/movie.mp4","type":"text"}]},"url":"{{baseUrl}}/api/admin/movies/{{id}}"}},
-        {"name":"Toggle movie publish","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/movies/{{id}}/toggle-publish"}},
-        {"name":"Delete movie","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/movies/{{id}}"}},
-        {"name":"Create series","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"title","value":"Test Series","type":"text"},{"key":"genre","value":"[\"Drama\"]","type":"text"},{"key":"category","value":"[\"trending\"]","type":"text"},{"key":"isPublished","value":"true","type":"text"}]},"url":"{{baseUrl}}/api/admin/series/add"}},
-        {"name":"Admin series","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/series?page=1&limit=10"}},
-        {"name":"Search series","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/series/search?q=Test"}},
-        {"name":"Update series","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"title","value":"Updated Series","type":"text"}]},"url":"{{baseUrl}}/api/admin/series/{{id}}"}},
-        {"name":"Toggle series publish","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/series/{{id}}/toggle-publish"}},
-        {"name":"Delete series","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/series/{{id}}"}},
-        {"name":"Create episode","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"seriesId","value":"{{id}}","type":"text"},{"key":"title","value":"Episode 1","type":"text"},{"key":"seasonNumber","value":"1","type":"text"},{"key":"episodeNumber","value":"1","type":"text"},{"key":"videoUrl","value":"https://example.com/episode.mp4","type":"text"}]},"url":"{{baseUrl}}/api/admin/episodes/add"}},
-        {"name":"Admin episodes","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/episodes?seriesId={{id}}"}},
-        {"name":"Search episodes","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/episodes/search?q=Episode&seriesId={{id}}"}},
-        {"name":"Update episode","request":{"method":"PATCH","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"body":{"mode":"formdata","formdata":[{"key":"title","value":"Updated Episode","type":"text"}]},"url":"{{baseUrl}}/api/admin/episodes/{{id}}"}},
-        {"name":"Delete episode","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/episodes/{{id}}"}},
-        {"name":"Delete season","request":{"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],"url":"{{baseUrl}}/api/admin/episodes/season/{{id}}/1"}}
+      "name": "Admin Media",
+      "item": [
+        {
+          "name": "Create movie",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Test Movie",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "A movie created through Postman",
+                  "type": "text"
+                },
+                {
+                  "key": "genre",
+                  "value": "[\"Action\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "[\"trending\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "isPublished",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "videoUrl",
+                  "value": "https://example.com/movie.mp4",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/movies/add"
+          }
+        },
+        {
+          "name": "Admin movies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/movies?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Search movies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/movies/search?q=Test"
+          }
+        },
+        {
+          "name": "Update movie",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Movie",
+                  "type": "text"
+                },
+                {
+                  "key": "videoUrl",
+                  "value": "https://example.com/movie.mp4",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/movies/{{id}}"
+          }
+        },
+        {
+          "name": "Toggle movie publish",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/movies/{{id}}/toggle-publish"
+          }
+        },
+        {
+          "name": "Delete movie",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/movies/{{id}}"
+          }
+        },
+        {
+          "name": "Create series",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Test Series",
+                  "type": "text"
+                },
+                {
+                  "key": "genre",
+                  "value": "[\"Drama\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "[\"trending\"]",
+                  "type": "text"
+                },
+                {
+                  "key": "isPublished",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/series/add"
+          }
+        },
+        {
+          "name": "Admin series",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/series?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Search series",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/series/search?q=Test"
+          }
+        },
+        {
+          "name": "Update series",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Series",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/series/{{id}}"
+          }
+        },
+        {
+          "name": "Toggle series publish",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/series/{{id}}/toggle-publish"
+          }
+        },
+        {
+          "name": "Delete series",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/series/{{id}}"
+          }
+        },
+        {
+          "name": "Create episode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "seriesId",
+                  "value": "{{id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Episode 1",
+                  "type": "text"
+                },
+                {
+                  "key": "seasonNumber",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "episodeNumber",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "videoUrl",
+                  "value": "https://example.com/episode.mp4",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/episodes/add"
+          }
+        },
+        {
+          "name": "Admin episodes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/episodes?seriesId={{id}}"
+          }
+        },
+        {
+          "name": "Search episodes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/episodes/search?q=Episode&seriesId={{id}}"
+          }
+        },
+        {
+          "name": "Update episode",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Episode",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/episodes/{{id}}"
+          }
+        },
+        {
+          "name": "Delete episode",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/episodes/{{id}}"
+          }
+        },
+        {
+          "name": "Delete season",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/episodes/season/{{id}}/1"
+          }
+        }
       ]
     }
   ]

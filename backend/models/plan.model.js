@@ -67,11 +67,14 @@ const planSchema =
       // OPTIONAL FUTURE SUPPORT
       // ========================================
 
-      // monthly / yearly / lifetime
+      // daily / weekly / monthly / quarterly / yearly / lifetime
       planType: {
         type: String,
 
         enum: [
+          "daily",
+          "daywise",
+          "weekly",
           "monthly",
           "quarterly",
           "yearly",

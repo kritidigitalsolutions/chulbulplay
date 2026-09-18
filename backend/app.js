@@ -42,6 +42,7 @@ const defaultAllowed = [
   "https://api.chulbulplay.in",
   "https://chulbulplay-admin.vercel.app",
   "https://chulbulplay.vercel.app",
+  "https://chulbulplay-lnew.vercel.app/"
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed].filter(Boolean))];
@@ -294,6 +295,10 @@ const paymentRoutes = require("./routes/user/payment.routes");
 const adminPaymentSettingsRoutes = require("./routes/admin/paymentSettings.routes");
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin/payment-settings", adminPaymentSettingsRoutes);
+
+// ========= Google AdMob ===============
+const adminAdmobRoutes = require("./routes/admin/admob.routes");
+app.use("/api/admin/admob", adminAdmobRoutes);
 
 // ========================================
 // EXPORT

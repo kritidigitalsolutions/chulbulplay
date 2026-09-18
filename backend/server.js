@@ -28,6 +28,9 @@ const startServer = async () => {
     server.timeout = 20 * 60 * 1000;
     server.keepAliveTimeout = 20 * 60 * 1000;
     server.headersTimeout = 21 * 60 * 1000;
+    // Initialize AdMob 15-minute background sync scheduler
+    const { initAdMobSyncScheduler } = require("./services/admobSync.service");
+    initAdMobSyncScheduler();
 
 
 

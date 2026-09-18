@@ -214,6 +214,8 @@ export default function PlansPage() {
                 value={form.planType}
                 onChange={ch}
               >
+                <option value="daily">Daily / Day Wise</option>
+                <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
                 <option value="yearly">Yearly</option>
