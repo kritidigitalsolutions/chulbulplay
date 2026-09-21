@@ -31,6 +31,9 @@ const frontendUrls = process.env.FRONTEND_URL
 const adminUrls = process.env.ADMIN_URL
   ? process.env.ADMIN_URL.split(",").map(url => url.trim().replace(/\/$/, ""))
   : [];
+const landingPageUrls = process.env.LANDING_PAGE_URL
+  ? process.env.LANDING_PAGE_URL.split(",").map(url => url.trim().replace(/\/$/, ""))
+  : [];
 
 const defaultAllowed = [
   process.env.FRONTEND_URL,
@@ -42,10 +45,11 @@ const defaultAllowed = [
   "https://api.chulbulplay.in",
   "https://chulbulplay-admin.vercel.app",
   "https://chulbulplay.vercel.app",
-  "https://chulbulplay-lnew.vercel.app/"
+  "https://chulbulplay-lnew.vercel.app/",
+  "https://chulbul-landing-page.vercel.app"
 ];
 
-const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...defaultAllowed].filter(Boolean))];
+const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...landingPageUrls, ...defaultAllowed].filter(Boolean))];
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -54,8 +58,11 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    const cleanOrigin = origin.replace(/\/$/, "");
+    const normalizedAllowed = allowedOrigins.map(u => String(u).replace(/\/$/, ""));
+
     // Check exact matches or wildcard
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+    if (normalizedAllowed.includes(cleanOrigin) || allowedOrigins.includes("*")) {
       return callback(null, true);
     }
 
@@ -300,7 +307,20 @@ app.use("/api/admin/payment-settings", adminPaymentSettingsRoutes);
 const adminAdmobRoutes = require("./routes/admin/admob.routes");
 app.use("/api/admin/admob", adminAdmobRoutes);
 
+// ========= Banners & Posters (Landing Page & Mobile App) ===============
+const userBannerRoutes = require("./routes/user/banner.routes");
+const adminBannerRoutes = require("./routes/admin/banner.routes");
+const userPosterRoutes = require("./routes/user/poster.routes");
+const adminPosterRoutes = require("./routes/admin/poster.routes");
+
+app.use("/api/banners", userBannerRoutes);
+app.use("/api/admin/banners", adminBannerRoutes);
+
+app.use("/api/posters", userPosterRoutes);
+app.use("/api/admin/posters", adminPosterRoutes);
+
 // ========================================
 // EXPORT
 // ========================================
 module.exports = app;
+

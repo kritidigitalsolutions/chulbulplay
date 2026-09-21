@@ -2,6 +2,7 @@ const MB = 1024 * 1024;
 const GB = 1024 * MB;
 
 const limits = {
+  image: 5 * MB,
   poster: 5 * MB,
   banner: 5 * MB,
   thumbnail: 5 * MB,
