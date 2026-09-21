@@ -1,6 +1,6 @@
 const Poster = require("../models/poster.model");
 const Category = require("../models/category.model");
-const { getMediaUrl, deleteMedia } = require("../utils/mediaUrl");
+const { formatMediaUrl, getMediaUrl, deleteMedia } = require("../utils/mediaUrl");
 
 // ========================================
 // GET POSTER CATEGORIES
@@ -76,8 +76,8 @@ const getPublicPosters = async (req, res) => {
         id: p._id,
         _id: p._id,
         title: p.title,
-        image: p.imageUrl,
-        imageUrl: p.imageUrl,
+        image: formatMediaUrl(p.imageUrl),
+        imageUrl: formatMediaUrl(p.imageUrl),
         category: p.category,
         description: p.description || "",
         linkUrl: p.linkUrl || "",
@@ -129,8 +129,8 @@ const getAllPosters = async (req, res) => {
         id: p._id,
         _id: p._id,
         title: p.title,
-        image: p.imageUrl,
-        imageUrl: p.imageUrl,
+        image: formatMediaUrl(p.imageUrl),
+        imageUrl: formatMediaUrl(p.imageUrl),
         category: p.category,
         description: p.description || "",
         linkUrl: p.linkUrl || "",
@@ -174,8 +174,8 @@ const getPosterById = async (req, res) => {
         id: poster._id,
         _id: poster._id,
         title: poster.title,
-        image: poster.imageUrl,
-        imageUrl: poster.imageUrl,
+        image: formatMediaUrl(poster.imageUrl),
+        imageUrl: formatMediaUrl(poster.imageUrl),
         category: poster.category,
         description: poster.description || "",
         linkUrl: poster.linkUrl || "",

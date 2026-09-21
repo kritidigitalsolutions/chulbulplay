@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const fsPromises = require("fs").promises;
 const { pipeline } = require("stream");
+const { formatMediaUrl } = require("../utils/mediaUrl");
 
 const getUploadInfo = (req, file) => {
   let type = "movies";
@@ -67,14 +68,15 @@ const storage = {
         }
 
         const relativeUrl = `/uploads/${uploadInfo.remoteFolder}/${filename}`;
-        console.log("LOCAL UPLOAD SUCCESS:", relativeUrl);
+        const cdnUrl = formatMediaUrl(relativeUrl);
+        console.log("LOCAL UPLOAD SUCCESS:", relativeUrl, "-> CDN:", cdnUrl);
         console.log("================================");
 
         cb(null, {
           filename,
           destination: uploadInfo.remoteFolder,
           path: relativeUrl,
-          cdnUrl: relativeUrl,
+          cdnUrl,
           remotePath: relativeUrl,
         });
       });

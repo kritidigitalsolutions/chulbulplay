@@ -1,5 +1,5 @@
 const Banner = require("../models/banner.model");
-const { getMediaUrl, deleteMedia } = require("../utils/mediaUrl");
+const { formatMediaUrl, getMediaUrl, deleteMedia } = require("../utils/mediaUrl");
 
 // ========================================
 // GET PUBLIC BANNERS (For Landing Page & App)
@@ -23,8 +23,8 @@ const getPublicBanners = async (req, res) => {
         id: b._id,
         _id: b._id,
         title: b.title,
-        image: b.imageUrl,
-        imageUrl: b.imageUrl,
+        image: formatMediaUrl(b.imageUrl),
+        imageUrl: formatMediaUrl(b.imageUrl),
         linkUrl: b.linkUrl || "",
         category: b.category || "",
         description: b.description || "",
@@ -70,8 +70,8 @@ const getAllBanners = async (req, res) => {
         id: b._id,
         _id: b._id,
         title: b.title,
-        image: b.imageUrl,
-        imageUrl: b.imageUrl,
+        image: formatMediaUrl(b.imageUrl),
+        imageUrl: formatMediaUrl(b.imageUrl),
         linkUrl: b.linkUrl || "",
         category: b.category || "",
         description: b.description || "",
@@ -113,8 +113,8 @@ const getBannerById = async (req, res) => {
         id: banner._id,
         _id: banner._id,
         title: banner.title,
-        image: banner.imageUrl,
-        imageUrl: banner.imageUrl,
+        image: formatMediaUrl(banner.imageUrl),
+        imageUrl: formatMediaUrl(banner.imageUrl),
         linkUrl: banner.linkUrl || "",
         category: banner.category || "",
         description: banner.description || "",

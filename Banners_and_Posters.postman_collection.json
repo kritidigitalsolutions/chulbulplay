@@ -1,0 +1,469 @@
+{
+  "info": {
+    "_postman_id": "b91f0c2a-8c9e-4e31-8f5b-9d7a22ef7a10",
+    "name": "ChulbulPlay - Banners & Posters API",
+    "description": "Postman collection for ChulbulPlay landing page & backend Banner and Categorized Poster APIs. Supports public fetching, category filtering, and Admin CRUD.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "posterId",
+      "value": ""
+    },
+    {
+      "key": "bannerId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login (Get Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('adminToken', res.token);",
+                  "    console.log('Saved adminToken');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chulbulplay@gmail.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/auth/login"
+          }
+        },
+        {
+          "name": "Test User Login (Bypass)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('adminToken', res.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9999999999\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/verify-otp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posters (Public - Landing Page)",
+      "item": [
+        {
+          "name": "Get All Public Posters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/posters"
+          }
+        },
+        {
+          "name": "Get Poster Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/posters/categories"
+          }
+        },
+        {
+          "name": "Filter Posters by Category (Movies)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posters?category=Movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posters"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Movies"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Posters by Category (Trending)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posters?category=Trending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posters"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Trending"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Poster by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/posters/{{posterId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posters (Admin Management)",
+      "item": [
+        {
+          "name": "Create Poster (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.poster && (res.poster._id || res.poster.id)) {",
+                  "    pm.collectionVariables.set('posterId', res.poster._id || res.poster.id);",
+                  "    console.log('Saved posterId:', pm.collectionVariables.get('posterId'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Action Hero Reloaded\",\n  \"imageUrl\": \"https://chulbulplay.b-cdn.net/posters/action-hero-reloaded.jpg\",\n  \"category\": \"Movies\",\n  \"description\": \"High-octane action movie exclusively on ChulbulPlay.\",\n  \"linkUrl\": \"/watch/action-hero\",\n  \"rating\": 8.5,\n  \"releaseYear\": 2026,\n  \"priority\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/posters"
+          }
+        },
+        {
+          "name": "Create Poster (Multipart File Upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "title",
+                  "value": "Blockbuster Web Series",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Web Series",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "New suspense thriller series",
+                  "type": "text"
+                },
+                {
+                  "key": "rating",
+                  "value": "9.1",
+                  "type": "text"
+                },
+                {
+                  "key": "releaseYear",
+                  "value": "2026",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/posters"
+          }
+        },
+        {
+          "name": "Get All Posters (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/posters"
+          }
+        },
+        {
+          "name": "Update Poster",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Action Hero Reloaded (Extended Edition)\",\n  \"category\": \"Trending\",\n  \"rating\": 9.0,\n  \"priority\": 3,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/posters/{{posterId}}"
+          }
+        },
+        {
+          "name": "Delete Poster",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/posters/{{posterId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Banners (Public - Landing Page)",
+      "item": [
+        {
+          "name": "Get All Public Banners",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/banners"
+          }
+        },
+        {
+          "name": "Get Banner by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/banners/{{bannerId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Banners (Admin Management)",
+      "item": [
+        {
+          "name": "Create Banner (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.banner && (res.banner._id || res.banner.id)) {",
+                  "    pm.collectionVariables.set('bannerId', res.banner._id || res.banner.id);",
+                  "    console.log('Saved bannerId:', pm.collectionVariables.get('bannerId'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Stream Unlimited Blockbusters\",\n  \"imageUrl\": \"https://chulbulplay.b-cdn.net/banners/hero-banner-stream-unlimited.jpg\",\n  \"linkUrl\": \"/subscription\",\n  \"category\": \"Trending\",\n  \"description\": \"Watch trending movies and web series in 4K HDR\",\n  \"priority\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/banners"
+          }
+        },
+        {
+          "name": "Create Banner (Multipart File Upload)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "title",
+                  "value": "Premium Hero Banner",
+                  "type": "text"
+                },
+                {
+                  "key": "linkUrl",
+                  "value": "/watch/premium-show",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Featured",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Exclusive new release",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/admin/banners"
+          }
+        },
+        {
+          "name": "Get All Banners (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/banners"
+          }
+        },
+        {
+          "name": "Update Banner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Summer Mega Offer - Stream Now\",\n  \"linkUrl\": \"/plans\",\n  \"priority\": 2,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/banners/{{bannerId}}"
+          }
+        },
+        {
+          "name": "Delete Banner",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/banners/{{bannerId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
