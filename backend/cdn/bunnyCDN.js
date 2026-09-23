@@ -377,8 +377,8 @@ const uploadStreamToBunny = async ({
     headers["Content-Length"] = String(contentLength);
   }
   console.log("BUNNY_ACCESS_KEY:", process.env.BUNNY_ACCESS_KEY?.substring(0, 8));
-console.log("BUNNY_STORAGE_ZONE:", process.env.BUNNY_STORAGE_ZONE);
-console.log("BUNNY_STORAGE_HOST:", process.env.BUNNY_STORAGE_HOST);
+  console.log("BUNNY_STORAGE_ZONE:", process.env.BUNNY_STORAGE_ZONE);
+  console.log("BUNNY_STORAGE_HOST:", process.env.BUNNY_STORAGE_HOST);
 
   const uploadUrl = `https://${storageHosts[0]}/${storageZone}/${safeRemotePath}`;
   const response = await uploadStreamRequest({

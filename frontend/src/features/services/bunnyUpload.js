@@ -164,6 +164,8 @@ export const uploadToBunny = async (
       !err?.response ||
       status === 401 ||
       status === 403 ||
+      status === 404 ||
+      status === 503 ||
       status === 0;
 
     if (!shouldFallbackToBackend) {

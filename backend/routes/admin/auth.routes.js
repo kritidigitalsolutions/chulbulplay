@@ -3,6 +3,8 @@ const express = require("express");
 const router = express.Router();
 
 const { isAdmin } = require("../../middlewares/admin.middleware");
+const { getClientUploadConfig } = require("../../cdn/bunnyCDN");
+const upload = require("../../middlewares/upload.middleware");
 
 const {
   loginAdmin,
@@ -33,8 +35,23 @@ router.get(
   getAdminProfile
 );
 
-// Bunny CDN routes are disabled while uploads are stored locally. Movie and
-// other content upload endpoints use the shared local upload middleware.
+// Bunny CDN Config Route (For frontend direct upload)
+router.get("/bunny-config", isAdmin, async (req, res) => {
+  try {
+    const config = await getClientUploadConfig();
+    res.json(config);
+  } catch (error) {
+    res.status(503).json({ success: false, message: error.message });
+  }
+});
+
+// Fallback upload route when direct Bunny CDN upload fails
+router.post("/bunny-upload", isAdmin, upload.single("file"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No file uploaded" });
+  }
+  res.json({ success: true, url: req.file.cdnUrl || req.file.path });
+});
 
 //OTP
 router.post(

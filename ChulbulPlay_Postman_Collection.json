@@ -1,0 +1,408 @@
+{
+  "info": {
+    "name": "ChulbulPlay APIs",
+    "description": "Collection of Banners, Posters, and Payment endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "your_admin_token_here",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "your_user_token_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Banners",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get All Active Banners",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/banners?category=Home",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "banners"],
+                  "query": [
+                    { "key": "category", "value": "Home", "disabled": true }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get Banner By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/banners/YOUR_BANNER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "banners", "YOUR_BANNER_ID"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get All Banners (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/banners",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "banners"]
+                }
+              }
+            },
+            {
+              "name": "Create Banner",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "New Sale Banner", "type": "text" },
+                    { "key": "category", "value": "Home", "type": "text" },
+                    { "key": "image", "type": "file", "src": [] }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/banners",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "banners"]
+                }
+              }
+            },
+            {
+              "name": "Update Banner",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "Updated Banner Title", "type": "text" }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/banners/YOUR_BANNER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "banners", "YOUR_BANNER_ID"]
+                }
+              }
+            },
+            {
+              "name": "Delete Banner",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/banners/YOUR_BANNER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "banners", "YOUR_BANNER_ID"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Posters",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get Poster Categories",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posters/categories",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posters", "categories"]
+                }
+              }
+            },
+            {
+              "name": "Get All Active Posters",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posters",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posters"]
+                }
+              }
+            },
+            {
+              "name": "Get Poster By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/posters/YOUR_POSTER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "posters", "YOUR_POSTER_ID"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get All Posters (Admin)",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/posters",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "posters"]
+                }
+              }
+            },
+            {
+              "name": "Create Poster",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "New Movie Poster", "type": "text" },
+                    { "key": "category", "value": "Trending", "type": "text" },
+                    { "key": "image", "type": "file", "src": [] }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/posters",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "posters"]
+                }
+              }
+            },
+            {
+              "name": "Update Poster",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "Updated Poster Title", "type": "text" }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/posters/YOUR_POSTER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "posters", "YOUR_POSTER_ID"]
+                }
+              }
+            },
+            {
+              "name": "Delete Poster",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/posters/YOUR_POSTER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "posters", "YOUR_POSTER_ID"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "User",
+          "item": [
+            {
+              "name": "Get Active Gateways",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/payment/gateways",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "payment", "gateways"]
+                }
+              }
+            },
+            {
+              "name": "Initiate SabPaisa Payment",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{user_token}}", "type": "string" }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"planId\": \"YOUR_PLAN_ID_HERE\",\n    \"platform\": \"website\"\n}",
+                  "options": {
+                    "raw": { "language": "json" }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/payment/sabpaisa/initiate",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "payment", "sabpaisa", "initiate"]
+                }
+              }
+            },
+            {
+              "name": "Check SabPaisa Status",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{user_token}}", "type": "string" }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/payment/sabpaisa/status/YOUR_ORDER_ID",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "payment", "sabpaisa", "status", "YOUR_ORDER_ID"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get Payment Settings",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/payment-settings",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "payment-settings"]
+                }
+              }
+            },
+            {
+              "name": "Update Payment Settings",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    { "key": "token", "value": "{{admin_token}}", "type": "string" }
+                  ]
+                },
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"sabpaisaEnabled\": true\n}",
+                  "options": {
+                    "raw": { "language": "json" }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/payment-settings",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "payment-settings"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
