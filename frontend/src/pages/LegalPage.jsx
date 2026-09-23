@@ -3,6 +3,13 @@ import API from "../api/axios";
 import { FileText, Eye, Edit2, X, Save } from "lucide-react";
 import "./Dashboard.css";
 
+const getExcerpt = (html, maxLength = 150) => {
+  if (!html) return "";
+  const plainText = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (plainText.length <= maxLength) return plainText;
+  return plainText.slice(0, maxLength).trim() + "...";
+};
+
 export default function LegalPage() {
   const [legal, setLegal] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -56,36 +63,75 @@ export default function LegalPage() {
               <span className={`badge ${doc.isPublished ? "badge-pub" : "badge-draft"}`}>
                 {doc.isPublished ? "Published" : "Draft"}
               </span>
-              <p className="doc-excerpt">{doc.content}</p>
+              <p className="doc-excerpt">{getExcerpt(doc.content)}</p>
             </div>
           ))}
         </div>
       )}
 
       {selected && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: 600 }}>
+        <div className="modal-overlay" onClick={() => setSelected(null)}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: mode === "view" ? 680 : 600 }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-head">
-              <h3>{mode === "view" ? <><FileText size={20} style={{ display: "inline-block", marginRight: 6 }} /> View Document</> : <><Edit2 size={20} style={{ display: "inline-block", marginRight: 6 }} /> Edit Document</>}</h3>
-              <button className="modal-close" onClick={() => setSelected(null)}><X size={24} /></button>
+              <h3>
+                {mode === "view" ? (
+                  <>
+                    <FileText size={20} style={{ display: "inline-block", marginRight: 6 }} />
+                    {selected.title || "View Document"}
+                  </>
+                ) : (
+                  <>
+                    <Edit2 size={20} style={{ display: "inline-block", marginRight: 6 }} />
+                    Edit Document
+                  </>
+                )}
+              </h3>
+              <button className="modal-close" onClick={() => setSelected(null)}>
+                <X size={24} />
+              </button>
             </div>
             <div className="modal-body">
-              <div className="form-row">
-                <label className="form-label">Title</label>
-                <input className="form-input" value={selected.title} disabled={mode === "view"}
-                  onChange={e => setSelected({ ...selected, title: e.target.value })} />
-              </div>
-              <div className="form-row">
-                <label className="form-label">Content</label>
-                <textarea className="form-input" rows={10} value={selected.content} disabled={mode === "view"}
-                  style={{ resize: "vertical", fontFamily: "monospace", fontSize: "0.88rem", lineHeight: 1.7 }}
-                  onChange={e => setSelected({ ...selected, content: e.target.value })} />
-              </div>
+              {mode === "view" ? (
+                <div
+                  className="legal-content-preview"
+                  dangerouslySetInnerHTML={{ __html: selected.content }}
+                />
+              ) : (
+                <>
+                  <div className="form-row">
+                    <label className="form-label">Title</label>
+                    <input
+                      className="form-input"
+                      value={selected.title}
+                      onChange={(e) => setSelected({ ...selected, title: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label className="form-label">Content</label>
+                    <textarea
+                      className="form-input"
+                      rows={12}
+                      value={selected.content}
+                      style={{ resize: "vertical", fontFamily: "monospace", fontSize: "0.88rem", lineHeight: 1.7 }}
+                      onChange={(e) => setSelected({ ...selected, content: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
             </div>
             {mode === "edit" && (
               <div className="modal-foot">
-                <button className="btn btn-ghost" onClick={() => setSelected(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleSave}><Save size={16} style={{ display: "inline-block", marginRight: 6 }} /> Save Changes</button>
+                <button className="btn btn-ghost" onClick={() => setSelected(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSave}>
+                  <Save size={16} style={{ display: "inline-block", marginRight: 6 }} />
+                  Save Changes
+                </button>
               </div>
             )}
           </div>

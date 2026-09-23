@@ -126,26 +126,26 @@ export default function HelpPage() {
             <Save size={16} style={{ marginRight: 6 }} /> Save Contact Info
           </button>
         </div>
-        
+
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 250 }}>
             <label className="form-label">Support Contact Number</label>
-            <input 
-              className="form-input" 
-              placeholder="+91 99999 99999" 
-              value={contactInfo.supportNumber} 
-              onChange={e => setContactInfo({...contactInfo, supportNumber: e.target.value})} 
+            <input
+              className="form-input"
+              placeholder="+91 99999 99999"
+              value={contactInfo.supportNumber}
+              onChange={e => setContactInfo({ ...contactInfo, supportNumber: e.target.value })}
             />
           </div>
-          
+
           <div style={{ flex: 1, minWidth: 250 }}>
             <label className="form-label">Support Email</label>
-            <input 
-              className="form-input" 
-              type="email" 
-              placeholder="support@example.com" 
-              value={contactInfo.supportEmail} 
-              onChange={e => setContactInfo({...contactInfo, supportEmail: e.target.value})} 
+            <input
+              className="form-input"
+              type="email"
+              placeholder="support@example.com"
+              value={contactInfo.supportEmail}
+              onChange={e => setContactInfo({ ...contactInfo, supportEmail: e.target.value })}
             />
           </div>
         </div>
@@ -188,7 +188,7 @@ export default function HelpPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: 4, marginBottom: 8 }}>
                 {item.category && <span className="badge badge-active">{item.category}</span>}
                 <span

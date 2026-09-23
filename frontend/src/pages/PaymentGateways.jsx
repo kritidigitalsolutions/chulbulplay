@@ -22,11 +22,11 @@ import "./PaymentGateways.css";
 const PaymentGateways = () => {
   // Current working state in UI
   const [pgConfig, setPgConfig] = useState({
-    razorpayEnabled: true,
+    razorpayEnabled: false,
     zaakpayEnabled: false,
     hdfcEnabled: false,
-    sabpaisaEnabled: false,
-    defaultGateway: "razorpay",
+    sabpaisaEnabled: true,
+    defaultGateway: "sabpaisa",
     zaakpayMode: "test",
     hdfcMode: "test",
     razorpayKeyConfigured: false,
@@ -40,11 +40,11 @@ const PaymentGateways = () => {
 
   // Last saved state from database
   const [savedConfig, setSavedConfig] = useState({
-    razorpayEnabled: true,
+    razorpayEnabled: false,
     zaakpayEnabled: false,
     hdfcEnabled: false,
-    sabpaisaEnabled: false,
-    defaultGateway: "razorpay",
+    sabpaisaEnabled: true,
+    defaultGateway: "sabpaisa",
     zaakpayMode: "test",
     hdfcMode: "test",
     razorpayKeyConfigured: false,
@@ -311,7 +311,7 @@ const PaymentGateways = () => {
             <CreditCard size={28} /> Payment Gateways
           </h1>
           <p className="pg-subtitle">
-            Configure Razorpay, Zaakpay, HDFC Bank, and SabPaisa. You can enable multiple gateways simultaneously.
+            Configure SabPaisa Payment Gateway settings for user subscriptions and payment processing.
           </p>
         </div>
 
@@ -400,7 +400,7 @@ const PaymentGateways = () => {
 
       {/* Gateways Grid */}
       <div className="pg-cards-grid">
-        {/* ── RAZORPAY CARD ── */}
+        {/* ── RAZORPAY CARD (DISABLED & COMMENTED OUT) ──
         <div className={`pg-gateway-card ${pgConfig.razorpayEnabled ? "is-active" : "is-disabled"}`}>
           <div className="pg-card-top">
             <div className="pg-brand-wrap">
@@ -471,8 +471,9 @@ const PaymentGateways = () => {
             </button>
           </div>
         </div>
+        ── */}
 
-        {/* ── ZAAKPAY CARD ── */}
+        {/* ── ZAAKPAY CARD (DISABLED & COMMENTED OUT) ──
         <div className={`pg-gateway-card ${pgConfig.zaakpayEnabled ? "is-active" : "is-disabled"}`}>
           <div className="pg-card-top">
             <div className="pg-brand-wrap">
@@ -563,8 +564,9 @@ const PaymentGateways = () => {
             </button>
           </div>
         </div>
+        ── */}
 
-        {/* ── HDFC BANK CARD ── */}
+        {/* ── HDFC BANK CARD (DISABLED & COMMENTED OUT) ──
         <div className={`pg-gateway-card ${pgConfig.hdfcEnabled ? "is-active" : "is-disabled"}`}>
           <div className="pg-card-top">
             <div className="pg-brand-wrap">
@@ -655,6 +657,7 @@ const PaymentGateways = () => {
             </button>
           </div>
         </div>
+        ── */}
 
         {/* ── SABPAISA CARD ── */}
         <div className={`pg-gateway-card ${pgConfig.sabpaisaEnabled ? "is-active" : "is-disabled"}`}>
@@ -708,13 +711,10 @@ const PaymentGateways = () => {
           <div className="pg-setting-field" style={{ maxWidth: "400px" }}>
             <label className="pg-field-label">Preferred Default Gateway</label>
             <select
-              value={pgConfig.defaultGateway || "razorpay"}
+              value={pgConfig.defaultGateway || "sabpaisa"}
               onChange={(e) => setPgConfig({ ...pgConfig, defaultGateway: e.target.value })}
               className="pg-select-input"
             >
-              <option value="razorpay">Razorpay {pgConfig.razorpayEnabled ? "(Enabled)" : "(Disabled)"}</option>
-              <option value="zaakpay">Zaakpay {pgConfig.zaakpayEnabled ? "(Enabled)" : "(Disabled)"}</option>
-              <option value="hdfc">HDFC Bank {pgConfig.hdfcEnabled ? "(Enabled)" : "(Disabled)"}</option>
               <option value="sabpaisa">SabPaisa {pgConfig.sabpaisaEnabled ? "(Enabled)" : "(Disabled)"}</option>
             </select>
             <span className="pg-field-hint">
