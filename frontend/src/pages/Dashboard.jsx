@@ -146,7 +146,7 @@ export default function Dashboard() {
       <div className="pg-header">
         <div>
           <h1 className="pg-title"><BarChart3 style={{ display: "inline-block", marginRight: 8 }} size={32} /> Platform Overview</h1>
-          <p className="pg-sub">Real-time stats and analytics for Mirchi</p>
+          <p className="pg-sub">Real-time stats and analytics for ChulbulPlay</p>
         </div>
         <button className="btn btn-ghost" onClick={fetchData}>
           {loading ? <><TrendingUp size={18} style={{ marginRight: 6 }} /> Loading...</> : <><RefreshCw size={18} style={{ marginRight: 6 }} /> Refresh</>}

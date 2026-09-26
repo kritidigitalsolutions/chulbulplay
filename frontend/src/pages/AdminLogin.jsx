@@ -21,7 +21,10 @@ const AdminLogin = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await API.post("/admin/auth/login", form);
+      const res = await API.post("/admin/auth/login", {
+        email: form.email.trim(),
+        password: form.password,
+      });
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
         if (res.data.admin?.name) localStorage.setItem("adminName", res.data.admin.name);

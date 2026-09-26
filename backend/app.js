@@ -45,8 +45,9 @@ const defaultAllowed = [
   "https://api.chulbulplay.in",
   "https://chulbulplay-admin.vercel.app",
   "https://chulbulplay.vercel.app",
-  "https://chulbulplay-lnew.vercel.app/",
-  "https://chulbul-landing-page.vercel.app"
+  "https://chulbulplay-lnew.vercel.app",
+  "https://chulbul-landing-page.vercel.app",
+  "https://www.chulbulplay.com",
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...landingPageUrls, ...defaultAllowed].filter(Boolean))];
