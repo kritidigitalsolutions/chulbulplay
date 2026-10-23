@@ -729,126 +729,7 @@
         }
       ]
     },
-    {
-      "name": "Payments",
-      "item": [
-        {
-          "name": "Create order",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"{{id}}\"\n}"
-            },
-            "url": "{{baseUrl}}/api/payment/create-order"
-          }
-        },
-        {
-          "name": "Initiate SabPaisa",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\",\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"+919999999999\"\n}"
-            },
-            "url": "{{baseUrl}}/api/payment/sabpaisa/initiate"
-          }
-        },
-        {
-          "name": "Initiate payment (legacy)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"platform\": \"app\"\n}"
-            },
-            "url": "{{baseUrl}}/api/payment/initiate"
-          }
-        },
-        {
-          "name": "SabPaisa return",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/payment/sabpaisa/return"
-          }
-        },
-        {
-          "name": "SabPaisa webhook",
-          "request": {
-            "method": "POST",
-            "body": {
-              "mode": "raw",
-              "raw": "{}"
-            },
-            "url": "{{baseUrl}}/api/payment/sabpaisa/webhook"
-          }
-        },
-        {
-          "name": "SabPaisa status",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "url": "{{baseUrl}}/api/payment/sabpaisa/status/{{orderId}}"
-          }
-        },
-        {
-          "name": "Verify payment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"paymentId\": \"PAYMENT_ID\",\n  \"signature\": \"SIGNATURE\"\n}"
-            },
-            "url": "{{baseUrl}}/api/payment/verify"
-          }
-        }
-      ]
-    },
+
     {
       "name": "Admin Media",
       "item": [
@@ -1209,6 +1090,128 @@
               }
             ],
             "url": "{{baseUrl}}/api/admin/episodes/season/{{id}}/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Active Payment Gateways",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/payment/gateways"
+          }
+        },
+        {
+          "name": "Razorpay - Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"promoCode\": \"\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/razorpay/create-order"
+          }
+        },
+        {
+          "name": "Razorpay - Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_xxx\",\n  \"razorpay_payment_id\": \"pay_xxx\",\n  \"razorpay_signature\": \"xxx\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/razorpay/verify"
+          }
+        },
+        {
+          "name": "Easebuzz - Initiate Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{id}}\",\n  \"name\": \"Customer Name\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": "{{baseUrl}}/api/payment/easebuzz/initiate"
+          }
+        },
+        {
+          "name": "Easebuzz - Check Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/payment/easebuzz/status/{{orderId}}"
+          }
+        },
+        {
+          "name": "Admin - Get Payment Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/payment-settings"
+          }
+        },
+        {
+          "name": "Admin - Update Payment Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpayEnabled\": true,\n  \"easebuzzEnabled\": true,\n  \"easebuzzMode\": \"live\",\n  \"defaultGateway\": \"razorpay\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/payment-settings"
           }
         }
       ]

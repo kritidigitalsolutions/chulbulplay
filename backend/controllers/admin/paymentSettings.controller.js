@@ -1,22 +1,33 @@
 const PaymentConfig = require("../../models/paymentConfig.model");
 
+// =====================================================
 // GET /api/admin/payment-settings
+// =====================================================
 exports.getPaymentSettings = async (req, res) => {
   try {
     const config = await PaymentConfig.getConfig();
-    const sabpaisaConfigured = Boolean(
-      process.env.SABPAISA_API_KEY &&
-      process.env.SABPAISA_SECRET_KEY &&
-      process.env.SABPAISA_MERCHANT_ID &&
-      process.env.SABPAISA_RETURN_URL
+
+    const razorpayConfigured = Boolean(
+      process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
+    );
+
+    const easebuzzConfigured = Boolean(
+      process.env.EASEBUZZ_KEY && process.env.EASEBUZZ_SALT
     );
 
     return res.status(200).json({
       success: true,
       data: {
-        sabpaisaEnabled: config.sabpaisaEnabled,
-        sabpaisaKeyConfigured: sabpaisaConfigured,
-        sabpaisaMode: process.env.SABPAISA_MODE || "test",
+        razorpayEnabled: Boolean(config.razorpayEnabled),
+        razorpayKeyConfigured: razorpayConfigured,
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID || "",
+
+        easebuzzEnabled: Boolean(config.easebuzzEnabled),
+        easebuzzKeyConfigured: easebuzzConfigured,
+        easebuzzKey: process.env.EASEBUZZ_KEY || "",
+        easebuzzMode: config.easebuzzMode || process.env.EASEBUZZ_MODE || "live",
+
+        defaultGateway: config.defaultGateway || "razorpay",
       },
     });
   } catch (error) {
@@ -29,19 +40,34 @@ exports.getPaymentSettings = async (req, res) => {
   }
 };
 
+// =====================================================
 // PUT /api/admin/payment-settings
+// =====================================================
 exports.updatePaymentSettings = async (req, res) => {
   try {
-    const { sabpaisaEnabled, sabpaisaMode } = req.body;
+    const {
+      razorpayEnabled,
+      easebuzzEnabled,
+      defaultGateway,
+      easebuzzMode,
+    } = req.body;
 
     const updateData = {};
 
-    if (sabpaisaEnabled !== undefined) {
-      updateData.sabpaisaEnabled = Boolean(sabpaisaEnabled);
+    if (razorpayEnabled !== undefined) {
+      updateData.razorpayEnabled = Boolean(razorpayEnabled);
     }
 
-    if (sabpaisaMode && ["test", "live"].includes(sabpaisaMode)) {
-      updateData.sabpaisaMode = sabpaisaMode;
+    if (easebuzzEnabled !== undefined) {
+      updateData.easebuzzEnabled = Boolean(easebuzzEnabled);
+    }
+
+    if (defaultGateway && ["razorpay", "easebuzz"].includes(defaultGateway)) {
+      updateData.defaultGateway = defaultGateway;
+    }
+
+    if (easebuzzMode && ["test", "live"].includes(easebuzzMode)) {
+      updateData.easebuzzMode = easebuzzMode;
     }
 
     let config = await PaymentConfig.findOne();
@@ -53,20 +79,28 @@ exports.updatePaymentSettings = async (req, res) => {
 
     await config.save();
 
-    const sabpaisaConfigured = Boolean(
-      process.env.SABPAISA_API_KEY &&
-      process.env.SABPAISA_SECRET_KEY &&
-      process.env.SABPAISA_MERCHANT_ID &&
-      process.env.SABPAISA_RETURN_URL
+    const razorpayConfigured = Boolean(
+      process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
+    );
+
+    const easebuzzConfigured = Boolean(
+      process.env.EASEBUZZ_KEY && process.env.EASEBUZZ_SALT
     );
 
     return res.status(200).json({
       success: true,
       message: "Payment gateway settings updated successfully",
       data: {
-        sabpaisaEnabled: config.sabpaisaEnabled,
-        sabpaisaKeyConfigured: sabpaisaConfigured,
-        sabpaisaMode: process.env.SABPAISA_MODE || "test",
+        razorpayEnabled: Boolean(config.razorpayEnabled),
+        razorpayKeyConfigured: razorpayConfigured,
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID || "",
+
+        easebuzzEnabled: Boolean(config.easebuzzEnabled),
+        easebuzzKeyConfigured: easebuzzConfigured,
+        easebuzzKey: process.env.EASEBUZZ_KEY || "",
+        easebuzzMode: config.easebuzzMode || process.env.EASEBUZZ_MODE || "live",
+
+        defaultGateway: config.defaultGateway || "razorpay",
       },
     });
   } catch (error) {

@@ -9,24 +9,41 @@ const {
 } = require("../../controllers/payment.controller");
 
 const {
-  initiatePayment: initiateSabpaisa,
-  handleReturn: handleSabpaisaReturn,
-  handleWebhook: handleSabpaisaWebhook,
-  checkPaymentStatus: checkSabpaisaStatus,
-} = require("../../controllers/sabpaisa.controller");
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+} = require("../../controllers/razorpay.controller");
 
-// Public / User Gateway Info
+const {
+  initiateEasebuzzPayment,
+  handleEasebuzzReturn,
+  handleEasebuzzWebhook,
+  checkEasebuzzStatus,
+} = require("../../controllers/easebuzz.controller");
+
+// =====================================================
+// Public / User Gateway Discovery
+// =====================================================
 router.get("/gateways", getActiveGateways);
 
-// ── SabPaisa PG 3.0 Routes ──
-router.post("/sabpaisa/initiate", isAuth, initiateSabpaisa);
-router.get("/sabpaisa/return", handleSabpaisaReturn);
-router.post("/sabpaisa/return", handleSabpaisaReturn);
-router.post("/sabpaisa/webhook", handleSabpaisaWebhook);
-router.get("/sabpaisa/status/:orderId", isAuth, checkSabpaisaStatus);
+// =====================================================
+// ── Razorpay Payment Routes ──
+// =====================================================
+router.post("/razorpay/create-order", isAuth, createRazorpayOrder);
+router.post("/razorpay/verify", isAuth, verifyRazorpayPayment);
 
-// Generic / legacy aliases for clients
-router.post("/initiate", isAuth, initiateSabpaisa);
+// =====================================================
+// ── Easebuzz Payment Routes ──
+// =====================================================
+router.post("/easebuzz/initiate", isAuth, initiateEasebuzzPayment);
+router.get("/easebuzz/return", handleEasebuzzReturn);
+router.post("/easebuzz/return", handleEasebuzzReturn);
+router.post("/easebuzz/webhook", handleEasebuzzWebhook);
+router.get("/easebuzz/status/:txnid", isAuth, checkEasebuzzStatus);
+
+// =====================================================
+// ── Universal / Smart Router Endpoints ──
+// =====================================================
+router.post("/initiate", isAuth, createOrder);
 router.post("/create-order", isAuth, createOrder);
 router.post("/verify", isAuth, verifyPayment);
 

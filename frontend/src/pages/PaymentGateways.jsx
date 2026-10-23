@@ -13,8 +13,6 @@ import {
   Save,
   Check,
   XCircle,
-  Building2,
-  QrCode,
   Layers
 } from "lucide-react";
 import "./PaymentGateways.css";
@@ -22,46 +20,32 @@ import "./PaymentGateways.css";
 const PaymentGateways = () => {
   // Current working state in UI
   const [pgConfig, setPgConfig] = useState({
-    razorpayEnabled: false,
-    zaakpayEnabled: false,
-    hdfcEnabled: false,
-    sabpaisaEnabled: true,
-    defaultGateway: "sabpaisa",
-    zaakpayMode: "test",
-    hdfcMode: "test",
+    razorpayEnabled: true,
     razorpayKeyConfigured: false,
-    zaakpayKeyConfigured: false,
-    hdfcKeyConfigured: false,
-    sabpaisaKeyConfigured: false,
-    sabpaisaMode: "test",
-    hdfcVpa: "roccoplaywork@hdfcbank",
-    hdfcStoreName: "ROCCOPLAY MEDIA",
+    razorpayKeyId: "",
+    easebuzzEnabled: true,
+    easebuzzKeyConfigured: false,
+    easebuzzKey: "",
+    easebuzzMode: "live",
+    defaultGateway: "razorpay",
   });
 
   // Last saved state from database
   const [savedConfig, setSavedConfig] = useState({
-    razorpayEnabled: false,
-    zaakpayEnabled: false,
-    hdfcEnabled: false,
-    sabpaisaEnabled: true,
-    defaultGateway: "sabpaisa",
-    zaakpayMode: "test",
-    hdfcMode: "test",
+    razorpayEnabled: true,
     razorpayKeyConfigured: false,
-    zaakpayKeyConfigured: false,
-    hdfcKeyConfigured: false,
-    sabpaisaKeyConfigured: false,
-    sabpaisaMode: "test",
-    hdfcVpa: "roccoplaywork@hdfcbank",
-    hdfcStoreName: "ROCCOPLAY MEDIA",
+    razorpayKeyId: "",
+    easebuzzEnabled: true,
+    easebuzzKeyConfigured: false,
+    easebuzzKey: "",
+    easebuzzMode: "live",
+    defaultGateway: "razorpay",
   });
 
   const [loading, setLoading] = useState(true);
   const [savingAll, setSavingAll] = useState(false);
   const [savingRzp, setSavingRzp] = useState(false);
-  const [savingZaak, setSavingZaak] = useState(false);
-  const [savingHdfc, setSavingHdfc] = useState(false);
-  const [savingSabpaisa, setSavingSabpaisa] = useState(false);
+  const [savingEasebuzz, setSavingEasebuzz] = useState(false);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -104,7 +88,7 @@ const PaymentGateways = () => {
     fetchSettings();
   }, []);
 
-  // Independent Toggle Handlers (Multiple gateways can be enabled together)
+  // Toggle Handlers
   const handleToggleRazorpay = (checked) => {
     setPgConfig((prev) => ({
       ...prev,
@@ -112,24 +96,10 @@ const PaymentGateways = () => {
     }));
   };
 
-  const handleToggleZaakpay = (checked) => {
+  const handleToggleEasebuzz = (checked) => {
     setPgConfig((prev) => ({
       ...prev,
-      zaakpayEnabled: checked,
-    }));
-  };
-
-  const handleToggleHdfc = (checked) => {
-    setPgConfig((prev) => ({
-      ...prev,
-      hdfcEnabled: checked,
-    }));
-  };
-
-  const handleToggleSabpaisa = (checked) => {
-    setPgConfig((prev) => ({
-      ...prev,
-      sabpaisaEnabled: checked,
+      easebuzzEnabled: checked,
     }));
   };
 
@@ -141,12 +111,9 @@ const PaymentGateways = () => {
       setSavingAll(true);
       const res = await API.put("/admin/payment-settings", {
         razorpayEnabled: pgConfig.razorpayEnabled,
-        zaakpayEnabled: pgConfig.zaakpayEnabled,
-        hdfcEnabled: pgConfig.hdfcEnabled,
-        sabpaisaEnabled: pgConfig.sabpaisaEnabled,
+        easebuzzEnabled: pgConfig.easebuzzEnabled,
+        easebuzzMode: pgConfig.easebuzzMode,
         defaultGateway: pgConfig.defaultGateway,
-        zaakpayMode: pgConfig.zaakpayMode,
-        hdfcMode: pgConfig.hdfcMode,
       });
       if (res.data?.success) {
         setMessage("All payment gateway settings saved successfully! ✅");
@@ -191,111 +158,49 @@ const PaymentGateways = () => {
     }
   };
 
-  // Save Zaakpay Gateway specifically
-  const handleSaveZaakpay = async () => {
+  // Save Easebuzz Gateway specifically
+  const handleSaveEasebuzz = async () => {
     setMessage("");
     setError("");
     try {
-      setSavingZaak(true);
+      setSavingEasebuzz(true);
       const res = await API.put("/admin/payment-settings", {
-        zaakpayEnabled: pgConfig.zaakpayEnabled,
-        zaakpayMode: pgConfig.zaakpayMode,
+        easebuzzEnabled: pgConfig.easebuzzEnabled,
+        easebuzzMode: pgConfig.easebuzzMode,
       });
       if (res.data?.success) {
-        const stateLabel = pgConfig.zaakpayEnabled ? "Enabled" : "Disabled";
-        setMessage(`Zaakpay successfully saved as ${stateLabel} (Mode: ${pgConfig.zaakpayMode.toUpperCase()})! ✅`);
+        const stateLabel = pgConfig.easebuzzEnabled ? "Enabled" : "Disabled";
+        setMessage(`Easebuzz successfully saved as ${stateLabel} (Mode: ${pgConfig.easebuzzMode.toUpperCase()})! ✅`);
         setSavedConfig((prev) => ({
           ...prev,
-          zaakpayEnabled: pgConfig.zaakpayEnabled,
-          zaakpayMode: pgConfig.zaakpayMode,
+          easebuzzEnabled: pgConfig.easebuzzEnabled,
+          easebuzzMode: pgConfig.easebuzzMode,
         }));
         setTimeout(() => setMessage(""), 4000);
         testPublicGatewayApi();
       }
     } catch (err) {
-      console.error("Save Zaakpay error:", err);
-      setError(err.response?.data?.message || "Failed to save Zaakpay configuration");
+      console.error("Save Easebuzz error:", err);
+      setError(err.response?.data?.message || "Failed to save Easebuzz configuration");
       setTimeout(() => setError(""), 5000);
     } finally {
-      setSavingZaak(false);
+      setSavingEasebuzz(false);
     }
   };
 
-  // Save HDFC Gateway specifically
-  const handleSaveHdfc = async () => {
-    setMessage("");
-    setError("");
-    try {
-      setSavingHdfc(true);
-      const res = await API.put("/admin/payment-settings", {
-        hdfcEnabled: pgConfig.hdfcEnabled,
-        hdfcMode: pgConfig.hdfcMode,
-      });
-      if (res.data?.success) {
-        const stateLabel = pgConfig.hdfcEnabled ? "Enabled" : "Disabled";
-        setMessage(`HDFC Bank Gateway successfully saved as ${stateLabel} (Mode: ${pgConfig.hdfcMode.toUpperCase()})! ✅`);
-        setSavedConfig((prev) => ({
-          ...prev,
-          hdfcEnabled: pgConfig.hdfcEnabled,
-          hdfcMode: pgConfig.hdfcMode,
-        }));
-        setTimeout(() => setMessage(""), 4000);
-        testPublicGatewayApi();
-      }
-    } catch (err) {
-      console.error("Save HDFC error:", err);
-      setError(err.response?.data?.message || "Failed to save HDFC configuration");
-      setTimeout(() => setError(""), 5000);
-    } finally {
-      setSavingHdfc(false);
-    }
-  };
-
-  // Save SabPaisa Gateway specifically
-  const handleSaveSabpaisa = async () => {
-    setMessage("");
-    setError("");
-    try {
-      setSavingSabpaisa(true);
-      const res = await API.put("/admin/payment-settings", {
-        sabpaisaEnabled: pgConfig.sabpaisaEnabled,
-      });
-      if (res.data?.success) {
-        setMessage(`SabPaisa successfully saved as ${pgConfig.sabpaisaEnabled ? "Enabled" : "Disabled"}! ✅`);
-        setSavedConfig((prev) => ({
-          ...prev,
-          sabpaisaEnabled: pgConfig.sabpaisaEnabled,
-        }));
-        setTimeout(() => setMessage(""), 4000);
-        testPublicGatewayApi();
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to save SabPaisa configuration");
-      setTimeout(() => setError(""), 5000);
-    } finally {
-      setSavingSabpaisa(false);
-    }
-  };
-
-  // Determine if individual cards or global config differ from database saved state
+  // Check changed states
   const isRzpChanged = pgConfig.razorpayEnabled !== savedConfig.razorpayEnabled;
-  const isZaakChanged =
-    pgConfig.zaakpayEnabled !== savedConfig.zaakpayEnabled ||
-    pgConfig.zaakpayMode !== savedConfig.zaakpayMode;
-  const isHdfcChanged =
-    pgConfig.hdfcEnabled !== savedConfig.hdfcEnabled ||
-    pgConfig.hdfcMode !== savedConfig.hdfcMode;
-  const isSabpaisaChanged = pgConfig.sabpaisaEnabled !== savedConfig.sabpaisaEnabled;
+  const isEasebuzzChanged =
+    pgConfig.easebuzzEnabled !== savedConfig.easebuzzEnabled ||
+    pgConfig.easebuzzMode !== savedConfig.easebuzzMode;
   const isDefaultGatewayChanged = pgConfig.defaultGateway !== savedConfig.defaultGateway;
 
-  const isAnyChanged = isRzpChanged || isZaakChanged || isHdfcChanged || isSabpaisaChanged || isDefaultGatewayChanged;
+  const isAnyChanged = isRzpChanged || isEasebuzzChanged || isDefaultGatewayChanged;
 
   // Active gateways list calculation
   const activeGatewaysList = [];
   if (pgConfig.razorpayEnabled) activeGatewaysList.push("Razorpay");
-  if (pgConfig.zaakpayEnabled) activeGatewaysList.push("Zaakpay");
-  if (pgConfig.hdfcEnabled) activeGatewaysList.push("HDFC Bank");
-  if (pgConfig.sabpaisaEnabled) activeGatewaysList.push("SabPaisa");
+  if (pgConfig.easebuzzEnabled) activeGatewaysList.push("Easebuzz");
 
   const activeGatewaysCountText =
     activeGatewaysList.length > 0
@@ -311,7 +216,7 @@ const PaymentGateways = () => {
             <CreditCard size={28} /> Payment Gateways
           </h1>
           <p className="pg-subtitle">
-            Configure SabPaisa Payment Gateway settings for user subscriptions and payment processing.
+            Configure live payment gateways (Razorpay & Easebuzz) for user subscriptions and checkout processing.
           </p>
         </div>
 
@@ -393,21 +298,21 @@ const PaymentGateways = () => {
           </div>
           <div>
             <div className="pg-stat-val">Multi-Gateway Enabled</div>
-            <div className="pg-stat-lbl">Flexible Active Mode</div>
+            <div className="pg-stat-lbl">Real-time Dynamic Switch</div>
           </div>
         </div>
       </div>
 
       {/* Gateways Grid */}
       <div className="pg-cards-grid">
-        {/* ── RAZORPAY CARD (DISABLED & COMMENTED OUT) ──
+        {/* ── RAZORPAY CARD ── */}
         <div className={`pg-gateway-card ${pgConfig.razorpayEnabled ? "is-active" : "is-disabled"}`}>
           <div className="pg-card-top">
             <div className="pg-brand-wrap">
               <div className="pg-brand-icon rzp-icon">₹</div>
               <div>
                 <h3 className="pg-brand-name">Razorpay</h3>
-                <span className="pg-brand-type">Standard Modal & UPI Checkout</span>
+                <span className="pg-brand-type">Native SDK, UPI, Cards, NetBanking</span>
               </div>
             </div>
 
@@ -425,23 +330,25 @@ const PaymentGateways = () => {
             <span className={`pg-status-pill ${pgConfig.razorpayEnabled ? "active" : "disabled"}`}>
               {pgConfig.razorpayEnabled ? "● Enabled" : "○ Disabled"}
             </span>
-            <span className="pg-env-pill rzp">Live Mode</span>
+            <span className="pg-env-pill rzp">Live Production</span>
           </div>
 
           <p className="pg-card-text">
-            Standard Razorpay JavaScript checkout supporting UPI, Credit & Debit Cards, Net Banking, and digital wallets.
+            Standard Razorpay modal and native mobile SDK checkout supporting instant UPI apps (GPay, PhonePe, Paytm), Debit/Credit Cards, and Net Banking.
           </p>
 
-          <div className="pg-features-list">
-            <div className="pg-feature-item">✓ Seamless Pop-up / Overlay checkout</div>
-            <div className="pg-feature-item">✓ Instant webhook & signature verification</div>
-            <div className="pg-feature-item">✓ Auto-activation of Subscription upon success</div>
+          <div className="pg-uat-box" style={{ background: "rgba(14, 165, 233, 0.08)", borderColor: "rgba(14, 165, 233, 0.35)" }}>
+            <div className="pg-uat-title" style={{ color: "#38bdf8" }}>Server Configuration:</div>
+            <div className="pg-uat-grid">
+              <div><strong>Status:</strong> {pgConfig.razorpayKeyConfigured ? "Configured" : "Missing Keys"}</div>
+              <div><strong>Key ID:</strong> {pgConfig.razorpayKeyId ? `${pgConfig.razorpayKeyId.slice(0, 12)}...` : "Configured in .env"}</div>
+            </div>
           </div>
 
           <div className="pg-card-footer">
             <div className="pg-footer-left">
               <span className="pg-key-tag">
-                <Key size={14} /> Key ID: Configured in Server (.env)
+                <Key size={14} /> Keys stored securely in backend .env
               </span>
             </div>
 
@@ -471,88 +378,83 @@ const PaymentGateways = () => {
             </button>
           </div>
         </div>
-        ── */}
 
-        {/* ── ZAAKPAY CARD (DISABLED & COMMENTED OUT) ──
-        <div className={`pg-gateway-card ${pgConfig.zaakpayEnabled ? "is-active" : "is-disabled"}`}>
+        {/* ── EASEBUZZ CARD ── */}
+        <div className={`pg-gateway-card ${pgConfig.easebuzzEnabled ? "is-active" : "is-disabled"}`}>
           <div className="pg-card-top">
             <div className="pg-brand-wrap">
-              <div className="pg-brand-icon zaak-icon">Z</div>
+              <div className="pg-brand-icon easebuzz-icon">E</div>
               <div>
-                <h3 className="pg-brand-name">Zaakpay</h3>
-                <span className="pg-brand-type">Hosted Payment Page (Redirect Flow V13)</span>
+                <h3 className="pg-brand-name">Easebuzz</h3>
+                <span className="pg-brand-type">Hosted Web Checkout & Mobile SDK</span>
               </div>
             </div>
 
-            <label className="pg-switch-toggle" title="Toggle Zaakpay">
+            <label className="pg-switch-toggle" title="Toggle Easebuzz">
               <input
                 type="checkbox"
-                checked={pgConfig.zaakpayEnabled}
-                onChange={(e) => handleToggleZaakpay(e.target.checked)}
+                checked={pgConfig.easebuzzEnabled}
+                onChange={(e) => handleToggleEasebuzz(e.target.checked)}
               />
               <span className="pg-slider"></span>
             </label>
           </div>
 
           <div className="pg-badge-row">
-            <span className={`pg-status-pill ${pgConfig.zaakpayEnabled ? "active" : "disabled"}`}>
-              {pgConfig.zaakpayEnabled ? "● Enabled" : "○ Disabled"}
+            <span className={`pg-status-pill ${pgConfig.easebuzzEnabled ? "active" : "disabled"}`}>
+              {pgConfig.easebuzzEnabled ? "● Enabled" : "○ Disabled"}
             </span>
-            <span className={`pg-env-pill ${pgConfig.zaakpayMode === "live" ? "live" : "test"}`}>
-              {pgConfig.zaakpayMode === "live" ? "Live Gateway" : "UAT / Staging"}
+            <span className={`pg-env-pill ${pgConfig.easebuzzMode === "live" ? "live" : "test"}`}>
+              {pgConfig.easebuzzMode === "live" ? "Live Production" : "Test Sandbox"}
             </span>
           </div>
 
           <p className="pg-card-text">
-            Zaakpay Hosted redirect payment gateway with HMAC-SHA256 checksum verification and card/UPI handling.
+            Easebuzz checkout with SHA-512 cryptographic verification. Supports In-App WebView and native SDK with UPI Collect/Intent, Cards, and NetBanking.
           </p>
 
           <div className="pg-setting-field">
             <label className="pg-field-label">Environment Mode</label>
             <select
-              value={pgConfig.zaakpayMode || "test"}
-              onChange={(e) => {
-                setPgConfig({ ...pgConfig, zaakpayMode: e.target.value });
-              }}
+              value={pgConfig.easebuzzMode || "live"}
+              onChange={(e) => setPgConfig({ ...pgConfig, easebuzzMode: e.target.value })}
               className="pg-select-input"
             >
-              <option value="test">🧪 Test / Staging (UAT Sandbox)</option>
-              <option value="live">🚀 Live / Production Gateway</option>
+              <option value="live">🚀 Live Production Gateway</option>
+              <option value="test">🧪 Test / Sandbox Staging</option>
             </select>
           </div>
 
-          <div className="pg-uat-box">
-            <div className="pg-uat-title">UAT Test Card Credentials:</div>
+          <div className="pg-uat-box" style={{ background: "rgba(16, 185, 129, 0.08)", borderColor: "rgba(16, 185, 129, 0.35)" }}>
+            <div className="pg-uat-title" style={{ color: "#34d399" }}>Easebuzz Credentials:</div>
             <div className="pg-uat-grid">
-              <div><strong>Card:</strong> 4111 1111 1111 1111</div>
-              <div><strong>CVV:</strong> 123</div>
-              <div><strong>Expiry:</strong> 07/29</div>
-              <div><strong>OTP:</strong> 1234</div>
+              <div><strong>Merchant Key:</strong> {pgConfig.easebuzzKey ? pgConfig.easebuzzKey : "Configured"}</div>
+              <div><strong>Salt:</strong> Configured in .env</div>
             </div>
           </div>
 
           <div className="pg-card-footer">
             <div className="pg-footer-left">
               <span className="pg-key-tag">
-                <Key size={14} /> Merchant ID: Configured in Server (.env)
+                <Key size={14} /> Keys stored securely in backend .env
               </span>
             </div>
 
             <button
               type="button"
-              className={`pg-card-save-btn ${!isZaakChanged ? "is-saved" : pgConfig.zaakpayEnabled ? "save-enabled" : "save-disabled"}`}
-              onClick={handleSaveZaakpay}
-              disabled={savingZaak || !isZaakChanged}
+              className={`pg-card-save-btn ${!isEasebuzzChanged ? "is-saved" : pgConfig.easebuzzEnabled ? "save-enabled" : "save-disabled"}`}
+              onClick={handleSaveEasebuzz}
+              disabled={savingEasebuzz || !isEasebuzzChanged}
             >
-              {savingZaak ? (
+              {savingEasebuzz ? (
                 <>
                   <RefreshCw size={15} className="spin" /> Saving...
                 </>
-              ) : !isZaakChanged ? (
+              ) : !isEasebuzzChanged ? (
                 <>
                   <Check size={16} /> Saved!
                 </>
-              ) : pgConfig.zaakpayEnabled ? (
+              ) : pgConfig.easebuzzEnabled ? (
                 <>
                   <Check size={16} /> Save as Enabled
                 </>
@@ -561,137 +463,6 @@ const PaymentGateways = () => {
                   <XCircle size={16} /> Save as Disabled
                 </>
               )}
-            </button>
-          </div>
-        </div>
-        ── */}
-
-        {/* ── HDFC BANK CARD (DISABLED & COMMENTED OUT) ──
-        <div className={`pg-gateway-card ${pgConfig.hdfcEnabled ? "is-active" : "is-disabled"}`}>
-          <div className="pg-card-top">
-            <div className="pg-brand-wrap">
-              <div className="pg-brand-icon hdfc-icon">H</div>
-              <div>
-                <h3 className="pg-brand-name">HDFC Bank</h3>
-                <span className="pg-brand-type">SmartGateway / SmartHub (Cards, NetBanking & UPI)</span>
-              </div>
-            </div>
-
-            <label className="pg-switch-toggle" title="Toggle HDFC Bank">
-              <input
-                type="checkbox"
-                checked={pgConfig.hdfcEnabled}
-                onChange={(e) => handleToggleHdfc(e.target.checked)}
-              />
-              <span className="pg-slider"></span>
-            </label>
-          </div>
-
-          <div className="pg-badge-row">
-            <span className={`pg-status-pill ${pgConfig.hdfcEnabled ? "active" : "disabled"}`}>
-              {pgConfig.hdfcEnabled ? "● Enabled" : "○ Disabled"}
-            </span>
-            <span className={`pg-env-pill ${pgConfig.hdfcMode === "live" ? "live" : "test"}`}>
-              {pgConfig.hdfcMode === "live" ? "Live Gateway" : "UAT / Staging"}
-            </span>
-          </div>
-
-          <p className="pg-card-text">
-            HDFC SmartGateway enterprise payment processing with Cards, NetBanking, and Direct UPI Collect/Intent.
-          </p>
-
-          <div className="pg-setting-field">
-            <label className="pg-field-label">Environment Mode</label>
-            <select
-              value={pgConfig.hdfcMode || "test"}
-              onChange={(e) => {
-                setPgConfig({ ...pgConfig, hdfcMode: e.target.value });
-              }}
-              className="pg-select-input"
-            >
-              <option value="test">🧪 Test / Staging (UAT Sandbox)</option>
-              <option value="live">🚀 Live / Production Gateway</option>
-            </select>
-          </div>
-
-          <div className="pg-uat-box" style={{ background: "rgba(30, 58, 138, 0.18)", borderColor: "rgba(59, 130, 246, 0.35)" }}>
-            <div className="pg-uat-title" style={{ color: "#93c5fd" }}>HDFC Merchant Configuration:</div>
-            <div className="pg-uat-grid">
-              <div><strong>Store:</strong> ROCCOPLAY MEDIA</div>
-              <div><strong>VPA:</strong> roccoplaywork@hdfcbank</div>
-              <div><strong>MID:</strong> HDFC000136707309</div>
-              <div><strong>Key ID:</strong> 8352000</div>
-            </div>
-          </div>
-
-          <div className="pg-card-footer">
-            <div className="pg-footer-left">
-              <span className="pg-key-tag">
-                <QrCode size={14} /> VPA: roccoplaywork@hdfcbank
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className={`pg-card-save-btn ${!isHdfcChanged ? "is-saved" : pgConfig.hdfcEnabled ? "save-enabled" : "save-disabled"}`}
-              onClick={handleSaveHdfc}
-              disabled={savingHdfc || !isHdfcChanged}
-            >
-              {savingHdfc ? (
-                <>
-                  <RefreshCw size={15} className="spin" /> Saving...
-                </>
-              ) : !isHdfcChanged ? (
-                <>
-                  <Check size={16} /> Saved!
-                </>
-              ) : pgConfig.hdfcEnabled ? (
-                <>
-                  <Check size={16} /> Save as Enabled
-                </>
-              ) : (
-                <>
-                  <XCircle size={16} /> Save as Disabled
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-        ── */}
-
-        {/* ── SABPAISA CARD ── */}
-        <div className={`pg-gateway-card ${pgConfig.sabpaisaEnabled ? "is-active" : "is-disabled"}`}>
-          <div className="pg-card-top">
-            <div className="pg-brand-wrap">
-              <div className="pg-brand-icon sabpaisa-icon">S</div>
-              <div>
-                <h3 className="pg-brand-name">SabPaisa</h3>
-                <span className="pg-brand-type">Hosted checkout for UPI, cards and net banking</span>
-              </div>
-            </div>
-            <label className="pg-switch-toggle" title="Toggle SabPaisa">
-              <input type="checkbox" checked={pgConfig.sabpaisaEnabled} onChange={(e) => handleToggleSabpaisa(e.target.checked)} />
-              <span className="pg-slider"></span>
-            </label>
-          </div>
-          <div className="pg-badge-row">
-            <span className={`pg-status-pill ${pgConfig.sabpaisaEnabled ? "active" : "disabled"}`}>
-              {pgConfig.sabpaisaEnabled ? "● Enabled" : "○ Disabled"}
-            </span>
-            <span className="pg-env-pill test">Test / Staging</span>
-          </div>
-          <p className="pg-card-text">Backend-created SabPaisa checkout sessions. Subscriptions activate only after signed return and server-side enquiry verification.</p>
-          <div className="pg-uat-box">
-            <div className="pg-uat-title">Server configuration:</div>
-            <div className="pg-uat-grid">
-              <div><strong>Credentials:</strong> {pgConfig.sabpaisaKeyConfigured ? "Configured" : "Missing"}</div>
-              <div><strong>Mode:</strong> {(pgConfig.sabpaisaMode || "test").toUpperCase()}</div>
-            </div>
-          </div>
-          <div className="pg-card-footer">
-            <span className="pg-key-tag"><Key size={14} /> Keys stay in backend .env</span>
-            <button type="button" className={`pg-card-save-btn ${!isSabpaisaChanged ? "is-saved" : pgConfig.sabpaisaEnabled ? "save-enabled" : "save-disabled"}`} onClick={handleSaveSabpaisa} disabled={savingSabpaisa || !isSabpaisaChanged}>
-              {savingSabpaisa ? <><RefreshCw size={15} className="spin" /> Saving...</> : !isSabpaisaChanged ? <><Check size={16} /> Saved!</> : pgConfig.sabpaisaEnabled ? <><Check size={16} /> Save as Enabled</> : <><XCircle size={16} /> Save as Disabled</>}
             </button>
           </div>
         </div>
@@ -703,7 +474,7 @@ const PaymentGateways = () => {
           <Settings2 size={22} className="pg-accent-icon" />
           <div>
             <h3>Default / Primary Payment Gateway</h3>
-            <p>Select which gateway should be chosen by default when multiple gateways are enabled for users.</p>
+            <p>Select which gateway should be chosen by default for user subscription checkout.</p>
           </div>
         </div>
 
@@ -711,14 +482,15 @@ const PaymentGateways = () => {
           <div className="pg-setting-field" style={{ maxWidth: "400px" }}>
             <label className="pg-field-label">Preferred Default Gateway</label>
             <select
-              value={pgConfig.defaultGateway || "sabpaisa"}
+              value={pgConfig.defaultGateway || "razorpay"}
               onChange={(e) => setPgConfig({ ...pgConfig, defaultGateway: e.target.value })}
               className="pg-select-input"
             >
-              <option value="sabpaisa">SabPaisa {pgConfig.sabpaisaEnabled ? "(Enabled)" : "(Disabled)"}</option>
+              <option value="razorpay">Razorpay {pgConfig.razorpayEnabled ? "(Enabled)" : "(Disabled)"}</option>
+              <option value="easebuzz">Easebuzz {pgConfig.easebuzzEnabled ? "(Enabled)" : "(Disabled)"}</option>
             </select>
             <span className="pg-field-hint">
-              Apps will prioritize this gateway if multiple gateways are active.
+              Clients and apps will automatically prioritize this gateway during user checkout.
             </span>
           </div>
 

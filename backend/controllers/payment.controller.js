@@ -1,31 +1,43 @@
 const PaymentConfig = require("../models/paymentConfig.model");
-const sabpaisaController = require("./sabpaisa.controller");
+const razorpayController = require("./razorpay.controller");
+const easebuzzController = require("./easebuzz.controller");
 
 // =====================================================
-// GET ACTIVE PAYMENT GATEWAYS (PUBLIC/USER API)
+// GET ACTIVE PAYMENT GATEWAYS (PUBLIC / USER API)
+// GET /api/payment/gateways
 // =====================================================
 exports.getActiveGateways = async (req, res) => {
   try {
     const config = await PaymentConfig.getConfig();
 
-    const sabpaisaConfigured = Boolean(
-      process.env.SABPAISA_API_KEY &&
-      process.env.SABPAISA_SECRET_KEY &&
-      process.env.SABPAISA_MERCHANT_ID &&
-      process.env.SABPAISA_RETURN_URL
+    const razorpayConfigured = Boolean(
+      process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
     );
 
-    const sabpaisaEnabled = Boolean(config.sabpaisaEnabled && sabpaisaConfigured);
+    const easebuzzConfigured = Boolean(
+      process.env.EASEBUZZ_KEY && process.env.EASEBUZZ_SALT
+    );
+
+    const razorpayActive = Boolean(config.razorpayEnabled && razorpayConfigured);
+    const easebuzzActive = Boolean(config.easebuzzEnabled && easebuzzConfigured);
 
     return res.status(200).json({
       success: true,
       gateways: {
-        sabpaisa: {
-          enabled: sabpaisaEnabled,
-          name: "SabPaisa",
-          mode: process.env.SABPAISA_MODE || "test",
+        razorpay: {
+          enabled: razorpayActive,
+          name: "Razorpay",
+          key: razorpayActive ? process.env.RAZORPAY_KEY_ID : null,
+          mode: "live",
+        },
+        easebuzz: {
+          enabled: easebuzzActive,
+          name: "Easebuzz",
+          key: easebuzzActive ? process.env.EASEBUZZ_KEY : null,
+          mode: config.easebuzzMode || process.env.EASEBUZZ_MODE || "live",
         },
       },
+      defaultGateway: config.defaultGateway || "razorpay",
     });
   } catch (err) {
     console.error("Get Active Gateways Error:", err);
@@ -37,24 +49,50 @@ exports.getActiveGateways = async (req, res) => {
 };
 
 // =====================================================
-// CREATE ORDER (Forward to SabPaisa for backwards compatibility)
+// CREATE / INITIATE ORDER (Smart Universal Router)
+// POST /api/payment/create-order or /api/payment/initiate
 // =====================================================
 exports.createOrder = async (req, res) => {
-  return sabpaisaController.initiatePayment(req, res);
+  try {
+    const config = await PaymentConfig.getConfig();
+    const requestedGateway = (req.body.gateway || config.defaultGateway || "razorpay").toLowerCase();
+
+    if (requestedGateway === "easebuzz") {
+      return easebuzzController.initiateEasebuzzPayment(req, res);
+    } else {
+      // Default fallback is Razorpay
+      return razorpayController.createRazorpayOrder(req, res);
+    }
+  } catch (err) {
+    console.error("Universal Create Order Router Error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 // =====================================================
-// VERIFY PAYMENT (Forward to SabPaisa status check if orderId provided)
+// VERIFY PAYMENT (Smart Universal Router)
+// POST /api/payment/verify
 // =====================================================
 exports.verifyPayment = async (req, res) => {
-  const orderId = req.body?.orderId;
-  if (orderId) {
-    req.params = req.params || {};
-    req.params.orderId = orderId;
-    return sabpaisaController.checkPaymentStatus(req, res);
+  try {
+    // Razorpay signature verify
+    if (req.body.razorpay_signature) {
+      return razorpayController.verifyRazorpayPayment(req, res);
+    }
+
+    // Easebuzz txnid verify
+    if (req.body.txnid) {
+      req.params = req.params || {};
+      req.params.txnid = req.body.txnid;
+      return easebuzzController.checkEasebuzzStatus(req, res);
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: "Required payment parameters missing (razorpay_signature / txnid)",
+    });
+  } catch (err) {
+    console.error("Universal Verify Payment Router Error:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
-  return res.status(400).json({
-    success: false,
-    message: "SabPaisa uses callback/return URL verification. Please pass orderId to check status.",
-  });
 };

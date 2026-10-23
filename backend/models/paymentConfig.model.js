@@ -2,14 +2,23 @@ const mongoose = require("mongoose");
 
 const paymentConfigSchema = new mongoose.Schema(
   {
-    sabpaisaEnabled: {
+    razorpayEnabled: {
       type: Boolean,
       default: true,
     },
-    sabpaisaMode: {
+    easebuzzEnabled: {
+      type: Boolean,
+      default: true,
+    },
+    defaultGateway: {
+      type: String,
+      enum: ["razorpay", "easebuzz"],
+      default: "razorpay",
+    },
+    easebuzzMode: {
       type: String,
       enum: ["test", "live"],
-      default: "test",
+      default: "live",
     },
   },
   { timestamps: true }
@@ -20,12 +29,30 @@ paymentConfigSchema.statics.getConfig = async function () {
   let config = await this.findOne();
   if (!config) {
     config = await this.create({
-      sabpaisaEnabled: true,
-      sabpaisaMode: process.env.SABPAISA_MODE || "test",
+      razorpayEnabled: true,
+      easebuzzEnabled: true,
+      defaultGateway: "razorpay",
+      easebuzzMode: process.env.EASEBUZZ_MODE || "live",
     });
   } else {
-    if (!config.sabpaisaEnabled) {
-      config.sabpaisaEnabled = true;
+    let updated = false;
+    if (config.razorpayEnabled === undefined) {
+      config.razorpayEnabled = true;
+      updated = true;
+    }
+    if (config.easebuzzEnabled === undefined) {
+      config.easebuzzEnabled = true;
+      updated = true;
+    }
+    if (!config.defaultGateway || !["razorpay", "easebuzz"].includes(config.defaultGateway)) {
+      config.defaultGateway = "razorpay";
+      updated = true;
+    }
+    if (!config.easebuzzMode) {
+      config.easebuzzMode = process.env.EASEBUZZ_MODE || "live";
+      updated = true;
+    }
+    if (updated) {
       await config.save();
     }
   }

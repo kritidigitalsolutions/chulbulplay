@@ -30,7 +30,7 @@ async function getOAuthClient() {
 
   const redirectUri =
     process.env.GOOGLE_ADMOB_REDIRECT_URI ||
-    "http://localhost:5000/api/admin/admob/oauth/callback";
+    "http://localhost:5004/api/admin/admob/oauth/callback";
 
   return new OAuth2Client(clientId, clientSecret, redirectUri);
 }
