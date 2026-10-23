@@ -65,7 +65,7 @@ const subscriptionSchema = new mongoose.Schema(
     // ========================================
     paymentGateway: {
       type: String,
-      enum: ["razorpay", "easebuzz", "sabpaisa", "manual", "voucher"],
+      enum: ["razorpay", "easebuzz", "sabpaisa", "manual", "voucher", "zaakpay"],
       default: "razorpay",
     },
 

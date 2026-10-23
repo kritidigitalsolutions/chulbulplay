@@ -19,6 +19,13 @@ function getBaseUrl(mode) {
     : "https://testpay.easebuzz.in/";
 }
 
+function getRetrieveUrl(mode) {
+  const resolvedMode = (mode || process.env.EASEBUZZ_MODE || "live").toLowerCase();
+  return resolvedMode === "live"
+    ? "https://dashboard.easebuzz.in/transaction/v2/retrieve"
+    : "https://testdashboard.easebuzz.in/transaction/v2/retrieve";
+}
+
 function generateInitiateHash({ key, txnid, amount, productinfo, firstname, email, salt }) {
   const hashString = [
     key,
@@ -507,31 +514,20 @@ exports.checkEasebuzzStatus = async (req, res) => {
     if (isEasebuzzConfigured()) {
       try {
         const config = await PaymentConfig.getConfig();
-        const baseUrl = getBaseUrl(config.easebuzzMode);
+        const retrieveUrl = getRetrieveUrl(config.easebuzzMode);
         const key = process.env.EASEBUZZ_KEY;
         const salt = process.env.EASEBUZZ_SALT;
 
-        const retrieveHashString = [
-          key,
-          order.txnid,
-          Number(order.amount).toFixed(2),
-          order.customerEmail || "",
-          order.customerPhone || "",
-          salt,
-        ].join("|");
-
+        const retrieveHashString = `${key}|${order.txnid}|${salt}`;
         const hash = crypto.createHash("sha512").update(retrieveHashString).digest("hex");
 
         const retrievePayload = new URLSearchParams({
           key,
           txnid: order.txnid,
-          amount: Number(order.amount).toFixed(2),
-          email: order.customerEmail || "",
-          phone: order.customerPhone || "",
           hash,
         });
 
-        const checkRes = await axios.post(`${baseUrl}transaction/v1/retrieve`, retrievePayload.toString(), {
+        const checkRes = await axios.post(retrieveUrl, retrievePayload.toString(), {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           timeout: 10000,
         });
@@ -564,3 +560,5 @@ exports.checkEasebuzzStatus = async (req, res) => {
     });
   }
 };
+
+exports.fulfillEasebuzzOrder = fulfillEasebuzzOrder;

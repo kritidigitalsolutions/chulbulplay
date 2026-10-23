@@ -1,32 +1,93 @@
 import { useEffect, useState, useRef } from "react";
-import API, { API_BASE_URL } from "../api/axios";
-import { Eye, Trash2, X, User, Ban, Plus, Search } from "lucide-react";
+import API from "../api/axios";
+import {
+  CreditCard,
+  RefreshCw,
+  Zap,
+  Plus,
+  Users,
+  Wallet,
+  TrendingUp,
+  Calendar,
+  Clock,
+  Search,
+  Eye,
+  Trash2,
+  Ban,
+  X,
+  User,
+  Smartphone,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import "./Subscription.css";
 
 export default function SubscriptionPage() {
+  // ── Tab State ──
+  const [activeTab, setActiveTab] = useState("subscribers"); // 'subscribers' | 'transactions'
+
+  // ── Subscriptions Data & Pagination ──
   const [subs, setSubs] = useState([]);
-  const [selectedSub, setSelectedSub] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [loadingSubs, setLoadingSubs] = useState(false);
   const limit = 10;
 
-  // Search & Filter State
+  // ── Filters State ──
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [platform, setPlatform] = useState("all");
+  const [gateway, setGateway] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
 
-  // Give Subscription modal state
+  // ── Dashboard Metrics State ──
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalSubscribers: 0,
+    activeCount: 0,
+    expiredCount: 0,
+    cancelledCount: 0,
+    totalRevenue: 0,
+  });
+
+  const [incomeStats, setIncomeStats] = useState({
+    todayIncome: 0,
+    yesterdayIncome: 0,
+    monthlyIncome: 0,
+    totalIncome: 0,
+  });
+
+  const [cardTodayGateway, setCardTodayGateway] = useState("all");
+  const [cardMonthlyGateway, setCardMonthlyGateway] = useState("all");
+
+  // ── Gateway Transactions State ──
+  const [gatewayTx, setGatewayTx] = useState([]);
+  const [loadingTx, setLoadingTx] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [txGatewayFilter, setTxGatewayFilter] = useState("all");
+  const [txSearch, setTxSearch] = useState("");
+
+  // ── Modals State ──
+  const [selectedSub, setSelectedSub] = useState(null);
+  const [selectedTx, setSelectedTx] = useState(null);
   const [isGiveOpen, setIsGiveOpen] = useState(false);
   const [usersList, setUsersList] = useState([]);
   const [plansList, setPlansList] = useState([]);
+
   const [giveForm, setGiveForm] = useState({
     user: "",
     plan: "",
     amount: "",
+    platform: "app",
+    paymentGateway: "manual",
     startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     paymentId: "",
     subscriptionId: "",
   });
+
   const [giveError, setGiveError] = useState("");
   const [giving, setGiving] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
@@ -36,6 +97,7 @@ export default function SubscriptionPage() {
   const userDropdownRef = useRef(null);
   const planDropdownRef = useRef(null);
 
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
@@ -49,10 +111,24 @@ export default function SubscriptionPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch Subscriptions when filters/page change
   useEffect(() => {
     fetchSubs();
-  }, [page, search, status]);
+  }, [page, search, status, platform, gateway, planFilter, sortOrder]);
 
+  // Fetch Stats & Plans on mount
+  useEffect(() => {
+    fetchStats();
+    loadPlans();
+    fetchGatewayTransactions();
+  }, []);
+
+  // Fetch income stats when card gateway filters change
+  useEffect(() => {
+    fetchIncomeStats();
+  }, [cardTodayGateway, cardMonthlyGateway]);
+
+  // Give subscription modal open handler
   useEffect(() => {
     if (isGiveOpen) {
       loadGiveData();
@@ -60,6 +136,8 @@ export default function SubscriptionPage() {
         user: "",
         plan: "",
         amount: "",
+        platform: "app",
+        paymentGateway: "manual",
         startDate: new Date().toISOString().split("T")[0],
         endDate: "",
         paymentId: "",
@@ -73,10 +151,14 @@ export default function SubscriptionPage() {
     }
   }, [isGiveOpen]);
 
+  // ── Fetch Functions ──
   const fetchSubs = async () => {
+    setLoadingSubs(true);
     try {
       const res = await API.get(
-        `/admin/subscription/all?page=${page}&limit=${limit}&search=${search}&status=${status}`
+        `/admin/subscription/all?page=${page}&limit=${limit}&search=${encodeURIComponent(
+          search
+        )}&status=${status}&platform=${platform}&gateway=${gateway}&plan=${planFilter}&sort=${sortOrder}`
       );
       setSubs(res.data.subscriptions || []);
       setTotalPages(res.data.pagination?.pages || 1);
@@ -84,6 +166,68 @@ export default function SubscriptionPage() {
       console.error("Failed to fetch subscriptions:", err);
       setSubs([]);
       setTotalPages(1);
+    } finally {
+      setLoadingSubs(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await API.get("/admin/subscription/stats");
+      const d = res.data.data || {};
+      setStats({
+        totalUsers: d.totalUsers || 0,
+        totalSubscribers: d.totalSubscribedUsers || 0,
+        activeCount: d.activeSubscriptionCount || d.totalSubscribedUsers || 0,
+        expiredCount: d.expiredSubscriptionCount || d.expirySubscriptionCount || 0,
+        cancelledCount: d.cancelledSubscriptionCount || 0,
+        totalRevenue: d.totalRevenue || 0,
+      });
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    }
+    fetchIncomeStats();
+  };
+
+  const fetchIncomeStats = async () => {
+    try {
+      const gw = cardTodayGateway !== "all" ? cardTodayGateway : "all";
+      const res = await API.get(`/admin/subscription/income-stats?gateway=${gw}`);
+      const d = res.data.data || {};
+      setIncomeStats({
+        todayIncome: d.todayIncome || 0,
+        yesterdayIncome: d.yesterdayIncome || 0,
+        monthlyIncome: d.monthlyIncome || 0,
+        totalIncome: d.totalIncome || 0,
+      });
+    } catch (err) {
+      console.error("Failed to fetch income stats:", err);
+    }
+  };
+
+  const loadPlans = async () => {
+    try {
+      const res = await API.get("/admin/plan");
+      setPlansList(res.data.plans || []);
+    } catch (err) {
+      console.error("Failed to load plans:", err);
+    }
+  };
+
+  const fetchGatewayTransactions = async () => {
+    setLoadingTx(true);
+    try {
+      const res = await API.get(`/admin/subscription/gateway-transactions?gateway=${txGatewayFilter}`);
+      // Exclude SabPaisa from gateway transactions if any
+      const txs = (res.data.transactions || []).filter(
+        (t) => (t.gateway || "").toLowerCase() !== "sabpaisa"
+      );
+      setGatewayTx(txs);
+    } catch (err) {
+      console.error("Failed to fetch gateway transactions:", err);
+      setGatewayTx([]);
+    } finally {
+      setLoadingTx(false);
     }
   };
 
@@ -94,21 +238,61 @@ export default function SubscriptionPage() {
         API.get("/admin/plan"),
       ]);
       setUsersList(usersRes.data.users || []);
-      setPlansList((plansRes.data.plans || []).filter(p => p.isActive !== false));
+      setPlansList((plansRes.data.plans || []).filter((p) => p.isActive !== false));
     } catch (err) {
-      console.error("Failed to load users or plans:", err);
+      console.error("Failed to load give data:", err);
     }
   };
 
+  // ── Sync Live Payments ──
+  const handleSyncPayments = async () => {
+    setSyncing(true);
+    try {
+      const res = await API.post("/admin/subscription/sync-gateway-payments");
+      alert(res.data.message || "Payment sync completed!");
+      fetchSubs();
+      fetchStats();
+      fetchGatewayTransactions();
+    } catch (err) {
+      console.error("Sync error:", err);
+      alert(err.response?.data?.message || "Failed to synchronize payments");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // ── Sync Single Transaction ──
+  const handleSyncSingleTx = async (tx) => {
+    if (!window.confirm(`Activate subscription for ${tx.customerName || tx.customerPhone} (${tx.gateway})?`)) {
+      return;
+    }
+    try {
+      const res = await API.post("/admin/subscription/sync-single-order", {
+        transactionId: tx.id,
+        orderId: tx.orderId,
+        gateway: tx.gateway,
+        userId: tx.userId,
+        phone: tx.customerPhone,
+        email: tx.customerEmail,
+        amount: tx.amount,
+        planId: tx.planId,
+      });
+      alert(res.data.message || "Subscription activated successfully!");
+      fetchSubs();
+      fetchStats();
+      fetchGatewayTransactions();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to activate subscription for this transaction");
+    }
+  };
+
+  // ── Actions Handlers ──
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this subscription permanently?")) return;
     try {
       await API.delete(`/admin/subscription/${id}`);
-      if (subs.length === 1 && page > 1) {
-        setPage((p) => p - 1);
-      } else {
-        fetchSubs();
-      }
+      fetchSubs();
+      fetchStats();
       alert("Subscription deleted successfully");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete subscription");
@@ -119,11 +303,8 @@ export default function SubscriptionPage() {
     if (!window.confirm("Are you sure you want to cancel this subscription?")) return;
     try {
       await API.patch(`/admin/subscription/${id}/cancel`);
-      setSubs((prev) =>
-        prev.map((sub) =>
-          sub._id === id ? { ...sub, status: "cancelled" } : sub
-        )
-      );
+      fetchSubs();
+      fetchStats();
       alert("Subscription cancelled successfully");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to cancel subscription");
@@ -150,6 +331,7 @@ export default function SubscriptionPage() {
       ...prev,
       plan: planId,
       amount: selected.price,
+      platform: selected.platform || "app",
       endDate: endDateStr,
     }));
   };
@@ -182,6 +364,8 @@ export default function SubscriptionPage() {
         plan: giveForm.plan,
         amount: Number(giveForm.amount),
         currency: "INR",
+        platform: giveForm.platform,
+        paymentGateway: giveForm.paymentGateway,
         startDate: giveForm.startDate,
         endDate: giveForm.endDate,
         paymentId: giveForm.paymentId || undefined,
@@ -190,7 +374,8 @@ export default function SubscriptionPage() {
 
       setIsGiveOpen(false);
       fetchSubs();
-      alert("Subscription assigned successfully!");
+      fetchStats();
+      alert("Subscription assigned successfully! 🎉");
     } catch (err) {
       setGiveError(err.response?.data?.message || "Failed to assign subscription");
     } finally {
@@ -198,629 +383,1183 @@ export default function SubscriptionPage() {
     }
   };
 
-  const getImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith("http")) return path;
-    const serverUrl = API_BASE_URL.replace("/api", "").replace(/\/+$/, "");
-    const cleanPath = path.replace(/\\/g, "/").replace(/^\/+/, "");
-    return `${serverUrl}/${cleanPath}`;
+  // ── Helper Formatter Functions ──
+  const getValidityInfo = (endDate, subStatus) => {
+    if (!endDate) return { date: "-", subtext: "-", isRemaining: false };
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+
+    const dateStr = end.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    if (subStatus === "active" && diffDays > 0) {
+      return {
+        date: dateStr,
+        subtext: `${diffDays} days remaining`,
+        isRemaining: true,
+      };
+    } else if (subStatus === "active" && diffDays === 0) {
+      return {
+        date: dateStr,
+        subtext: "Expires today",
+        isRemaining: true,
+      };
+    } else {
+      const daysAgo = Math.abs(diffDays);
+      return {
+        date: dateStr,
+        subtext: `Expired ${daysAgo > 0 ? `${daysAgo} days ago` : "today"}`,
+        isRemaining: false,
+      };
+    }
   };
 
+  const getGatewayPillClass = (gw) => {
+    const g = (gw || "").toLowerCase();
+    if (g.includes("razorpay")) return "gateway-razorpay";
+    if (g.includes("easebuzz")) return "gateway-easebuzz";
+    if (g.includes("zaakpay")) return "gateway-zaakpay";
+    return "gateway-manual";
+  };
+
+  const getGatewayDisplayName = (gw) => {
+    const g = (gw || "manual").toLowerCase();
+    if (g === "razorpay") return "Razorpay";
+    if (g === "easebuzz") return "Easebuzz";
+    if (g === "zaakpay") return "Zaakpay";
+    if (g === "voucher") return "Voucher";
+    return "Manual";
+  };
+
+  const filteredGatewayTx = gatewayTx.filter((tx) => {
+    if (txGatewayFilter !== "all" && tx.gateway !== txGatewayFilter) return false;
+    if (txSearch) {
+      const q = txSearch.toLowerCase();
+      const match =
+        (tx.id || "").toLowerCase().includes(q) ||
+        (tx.orderId || "").toLowerCase().includes(q) ||
+        (tx.customerName || "").toLowerCase().includes(q) ||
+        (tx.customerEmail || "").toLowerCase().includes(q) ||
+        (tx.customerPhone || "").toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
+
   return (
-    <div className="subscription-page">
-      {/* Header section */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <h2 style={{ margin: 0 }}>💳 Subscribed Users</h2>
+    <div className="sub-monitor-container">
+      {/* ── Page Header ── */}
+      <div className="sub-header">
+        <div className="sub-header-left">
+          <div className="sub-title-row">
+            <CreditCard className="sub-header-icon" />
+            <h1 className="sub-title">Subscribed Users &amp; Monitoring</h1>
+          </div>
+          <p className="sub-subtitle">
+            Real-time subscriber metrics, revenue breakdown, and user subscription management
+          </p>
+        </div>
+
+        <div className="sub-header-actions">
+          <button
+            className="btn-header-action"
+            onClick={() => {
+              fetchSubs();
+              fetchStats();
+              fetchGatewayTransactions();
+            }}
+            title="Refresh subscriber and income data"
+          >
+            <RefreshCw size={15} className={loadingSubs || loadingTx ? "spinning" : ""} />
+            Refresh
+          </button>
+
+          <button
+            className="btn-header-action sync-btn"
+            onClick={handleSyncPayments}
+            disabled={syncing}
+            title="Fetch live captured payments from Razorpay / Gateways and activate subscriptions"
+          >
+            <Zap size={15} className={syncing ? "spinning" : ""} />
+            {syncing ? "Syncing..." : "Sync Payments"}
+          </button>
+
+          <button
+            className="btn-header-primary"
+            onClick={() => setIsGiveOpen(true)}
+          >
+            <Plus size={16} />
+            Give Subscription
+          </button>
+        </div>
+      </div>
+
+      {/* ── 5 Metric KPI Cards ── */}
+      <div className="sub-stats-grid">
+        {/* Card 1: Subscribed Users */}
+        <div className="sub-stat-card card-blue">
+          <div className="sub-stat-card-head">
+            <span className="sub-stat-label">SUBSCRIBED USERS</span>
+            <div className="sub-stat-icon-wrap blue">
+              <Users size={16} />
+            </div>
+          </div>
+          <div className="sub-stat-value">{stats.activeCount || stats.totalSubscribers}</div>
+          <div className="sub-stat-subtext">
+            <span className="dot-indicator"></span>
+            {stats.activeCount || stats.totalSubscribers} active subscriptions
+          </div>
+        </div>
+
+        {/* Card 2: Total Revenue */}
+        <div className="sub-stat-card card-pink">
+          <div className="sub-stat-card-head">
+            <span className="sub-stat-label">TOTAL REVENUE</span>
+            <div className="sub-stat-icon-wrap pink">
+              <Wallet size={16} />
+            </div>
+          </div>
+          <div className="sub-stat-value">₹{(stats.totalRevenue || 0).toLocaleString("en-IN")}</div>
+          <div className="sub-stat-subtext">All-time subscription earnings</div>
+        </div>
+
+        {/* Card 3: Today's Income */}
+        <div className="sub-stat-card card-green">
+          <div className="sub-stat-card-head">
+            <span className="sub-stat-label">TODAY'S INCOME</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <select
+                className="sub-card-gateway-select"
+                value={cardTodayGateway}
+                onChange={(e) => setCardTodayGateway(e.target.value)}
+              >
+                <option value="all">All Gateways</option>
+                <option value="razorpay">Razorpay</option>
+                <option value="easebuzz">Easebuzz</option>
+              </select>
+              <div className="sub-stat-icon-wrap green">
+                <TrendingUp size={16} />
+              </div>
+            </div>
+          </div>
+          <div className="sub-stat-value">₹{(incomeStats.todayIncome || 0).toLocaleString("en-IN")}</div>
+          <div className="sub-stat-subtext">
+            Yesterday: ₹{(incomeStats.yesterdayIncome || 0).toLocaleString("en-IN")} • {getGatewayDisplayName(cardTodayGateway)}
+          </div>
+        </div>
+
+        {/* Card 4: Monthly Income */}
+        <div className="sub-stat-card card-amber">
+          <div className="sub-stat-card-head">
+            <span className="sub-stat-label">MONTHLY INCOME</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <select
+                className="sub-card-gateway-select"
+                value={cardMonthlyGateway}
+                onChange={(e) => setCardMonthlyGateway(e.target.value)}
+              >
+                <option value="all">All Gateways</option>
+                <option value="razorpay">Razorpay</option>
+                <option value="easebuzz">Easebuzz</option>
+              </select>
+              <div className="sub-stat-icon-wrap amber">
+                <Calendar size={16} />
+              </div>
+            </div>
+          </div>
+          <div className="sub-stat-value">₹{(incomeStats.monthlyIncome || 0).toLocaleString("en-IN")}</div>
+          <div className="sub-stat-subtext">
+            Current month collections • {getGatewayDisplayName(cardMonthlyGateway)}
+          </div>
+        </div>
+
+        {/* Card 5: Expired & Cancelled */}
+        <div className="sub-stat-card card-purple">
+          <div className="sub-stat-card-head">
+            <span className="sub-stat-label">EXPIRED &amp; CANCELLED</span>
+            <div className="sub-stat-icon-wrap purple">
+              <Clock size={16} />
+            </div>
+          </div>
+          <div className="sub-stat-value">{stats.expiredCount + stats.cancelledCount}</div>
+          <div className="sub-stat-subtext">
+            {stats.cancelledCount} cancelled subscriptions
+          </div>
+        </div>
+      </div>
+
+      {/* ── View Mode Tabs ── */}
+      <div className="sub-tabs-container">
         <button
-          className="btn btn-primary"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            background: "var(--primary)",
-            color: "white",
-            border: "none",
-            borderRadius: "var(--radius-sm)",
-            cursor: "pointer",
-            fontWeight: "600"
-          }}
-          onClick={() => setIsGiveOpen(true)}
+          className={`sub-tab-btn ${activeTab === "subscribers" ? "active" : ""}`}
+          onClick={() => setActiveTab("subscribers")}
         >
-          <Plus size={16} /> Give Subscription
+          Subscribed Users
+          <span className="sub-tab-badge">{subs.length}</span>
+        </button>
+
+        <button
+          className={`sub-tab-btn ${activeTab === "transactions" ? "active" : ""}`}
+          onClick={() => {
+            setActiveTab("transactions");
+            if (!gatewayTx.length) fetchGatewayTransactions();
+          }}
+        >
+          Payment Gateway Transactions
+          <span className="sub-tab-badge">{gatewayTx.length}</span>
         </button>
       </div>
 
-      {/* Search & Filter Controls */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Search by user name or email..."
-            style={{
-              width: "100%",
-              padding: "10px 12px 10px 42px",
-              background: "var(--bg2)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-sm)",
-              color: "var(--text)"
-            }}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-          <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center" }}>
-            <Search size={16} />
-          </span>
-        </div>
-        <select
-          className="form-input"
-          style={{
-            width: "180px",
-            padding: "10px 12px",
-            background: "var(--bg2)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-sm)",
-            color: "var(--text)",
-            cursor: "pointer"
-          }}
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="all">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="expired">Expired</option>
-        </select>
-      </div>
+      {/* ─────────────────────────────────────────────────────────────
+          TAB 1: SUBSCRIBED USERS VIEW (Exact Match to Image 3)
+          ───────────────────────────────────────────────────────────── */}
+      {activeTab === "subscribers" && (
+        <>
+          {/* Filter Bar */}
+          <div className="sub-filter-bar">
+            {/* Search Input */}
+            <div className="sub-search-wrap">
+              <Search size={16} className="sub-search-icon" />
+              <input
+                type="text"
+                className="sub-search-input"
+                placeholder="Search by user name, email, or phone..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
 
-      <table className="subscription-table">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Plan</th>
-            <th>Status</th>
-            <th>Amount</th>
-            <th>Expiry</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {subs.map((sub) => {
-            const isActive =
-              sub.status === "active" &&
-              new Date(sub.endDate) > new Date();
-
-            return (
-              <tr key={sub._id}>
-                <td>{sub.user?.name || "-"}</td>
-
-                <td className="plan">{sub.plan?.name || sub.plan || "-"}</td>
-
-                <td>
-                  <span className={isActive ? "status active" : "status expired"}>
-                    {sub.status === "active" ? "Active" : sub.status === "cancelled" ? "Cancelled" : "Expired"}
-                  </span>
-                </td>
-
-                <td>₹{sub.amount || 0}</td>
-
-                <td>
-                  {sub.endDate
-                    ? new Date(sub.endDate).toLocaleDateString("en-IN")
-                    : "-"}
-                </td>
-
-                <td>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <button
-                      className="icon-btn view"
-                      onClick={() => setSelectedSub(sub)}
-                      title="View Details"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className="icon-btn cancel"
-                      style={{
-                        width: "auto",
-                        padding: "0 10px",
-                        gap: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        borderColor: isActive ? "rgba(245, 158, 11, 0.3)" : "var(--border)",
-                        background: isActive ? "var(--orange-dim)" : "transparent",
-                        color: isActive ? "var(--orange)" : "var(--text-muted)",
-                        opacity: isActive ? 1 : 0.4,
-                        cursor: isActive ? "pointer" : "not-allowed",
-                        fontWeight: 600,
-                        fontSize: "0.75rem"
-                      }}
-                      disabled={!isActive}
-                      onClick={() => handleCancel(sub._id)}
-                      title={isActive ? "Cancel Subscription" : "Subscription is not active"}
-                    >
-                      <Ban size={14} /> Cancel
-                    </button>
-                    <button
-                      className="icon-btn del"
-                      onClick={() => handleDelete(sub._id)}
-                      title="Delete Subscription"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", padding: "10px 0" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>
-            Showing page {page} of {totalPages}
-          </span>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              className="btn btn-ghost"
-              style={{ padding: "6px 16px", fontSize: "0.85rem", opacity: page === 1 ? 0.5 : 1, cursor: page === 1 ? "not-allowed" : "pointer" }}
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
+            {/* Status Dropdown */}
+            <select
+              className="sub-select-filter"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
             >
-              Previous
-            </button>
-            <button
-              className="btn btn-ghost"
-              style={{ padding: "6px 16px", fontSize: "0.85rem", opacity: page === totalPages ? 0.5 : 1, cursor: page === totalPages ? "not-allowed" : "pointer" }}
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="expired">Expired</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+
+            {/* Platform Dropdown */}
+            <select
+              className="sub-select-filter"
+              value={platform}
+              onChange={(e) => {
+                setPlatform(e.target.value);
+                setPage(1);
+              }}
             >
-              Next
+              <option value="all">All Platforms</option>
+              <option value="app">App</option>
+              <option value="website">Website</option>
+            </select>
+
+            {/* Plan Dropdown */}
+            <select
+              className="sub-select-filter"
+              value={planFilter}
+              onChange={(e) => {
+                setPlanFilter(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Plans</option>
+              {plansList.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Gateway Dropdown (SabPaisa removed) */}
+            <select
+              className="sub-select-filter"
+              value={gateway}
+              onChange={(e) => {
+                setGateway(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Gateways</option>
+              <option value="razorpay">Razorpay</option>
+              <option value="easebuzz">Easebuzz</option>
+              <option value="manual">Manual</option>
+              <option value="voucher">Voucher</option>
+            </select>
+
+            {/* Sort Dropdown */}
+            <select
+              className="sub-select-filter"
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount_high">Amount: High to Low</option>
+              <option value="amount_low">Amount: Low to High</option>
+            </select>
+          </div>
+
+          {/* Table Container */}
+          <div className="sub-table-container">
+            <table className="sub-table">
+              <thead>
+                <tr>
+                  <th>SUBSCRIBER</th>
+                  <th>PLAN</th>
+                  <th>PLATFORM</th>
+                  <th>GATEWAY</th>
+                  <th>AMOUNT</th>
+                  <th>VALIDITY</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loadingSubs ? (
+                  <tr>
+                    <td colSpan="8" className="empty-table-state">
+                      <RefreshCw size={28} className="spinning" style={{ margin: "0 auto", color: "#38bdf8" }} />
+                      <p>Loading subscriptions...</p>
+                    </td>
+                  </tr>
+                ) : subs.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="empty-table-state">
+                      <AlertCircle size={32} style={{ margin: "0 auto", color: "#64748b" }} />
+                      <p>No subscriptions found matching your filters.</p>
+                      <button
+                        className="btn-header-action sync-btn"
+                        style={{ marginTop: "12px" }}
+                        onClick={handleSyncPayments}
+                      >
+                        <Zap size={14} /> Sync Recent Payments
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  subs.map((sub) => {
+                    const validity = getValidityInfo(sub.endDate, sub.status);
+                    const isActive = sub.status === "active";
+
+                    return (
+                      <tr key={sub._id}>
+                        {/* 1. SUBSCRIBER */}
+                        <td>
+                          <div className="subscriber-info-cell">
+                            <div className="subscriber-avatar">
+                              {sub.user?.profileImage ? (
+                                <img src={sub.user.profileImage} alt={sub.user.name || "User"} />
+                              ) : (
+                                <User size={18} />
+                              )}
+                            </div>
+                            <div className="subscriber-text">
+                              <span className="subscriber-name">{sub.user?.name || "Subscriber"}</span>
+                              <span className="subscriber-email">{sub.user?.email || "No email"}</span>
+                              <span className="subscriber-phone">{sub.user?.phone || "--"}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 2. PLAN */}
+                        <td>
+                          <div className="plan-cell">
+                            <span className="plan-name">{sub.plan?.name || "Standard Plan"}</span>
+                            <span className="plan-details">
+                              {sub.plan?.duration ? `${sub.plan.duration} Days` : "30 Days"}
+                              {sub.plan?.planType ? ` • ${sub.plan.planType}` : ""}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. PLATFORM */}
+                        <td>
+                          {sub.platform === "website" ? (
+                            <span className="badge-pill platform-website">
+                              <Globe size={11} /> Website
+                            </span>
+                          ) : (
+                            <span className="badge-pill platform-app">
+                              <Smartphone size={11} /> App
+                            </span>
+                          )}
+                        </td>
+
+                        {/* 4. GATEWAY */}
+                        <td>
+                          <span className={`badge-pill ${getGatewayPillClass(sub.paymentGateway)}`}>
+                            {getGatewayDisplayName(sub.paymentGateway)}
+                          </span>
+                        </td>
+
+                        {/* 5. AMOUNT */}
+                        <td>
+                          <span className="amount-cell">₹{sub.amount || 0}</span>
+                        </td>
+
+                        {/* 6. VALIDITY */}
+                        <td>
+                          <div className="validity-cell">
+                            <span className="validity-date">{validity.date}</span>
+                            <span
+                              className={`validity-subtext ${validity.isRemaining ? "remaining" : "expired"}`}
+                            >
+                              {validity.subtext}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 7. STATUS */}
+                        <td>
+                          <span
+                            className={`badge-pill ${
+                              sub.status === "active"
+                                ? "status-active"
+                                : sub.status === "cancelled"
+                                ? "status-cancelled"
+                                : "status-expired"
+                            }`}
+                          >
+                            {sub.status === "active"
+                              ? "Active"
+                              : sub.status === "cancelled"
+                              ? "Cancelled"
+                              : "Expired"}
+                          </span>
+                        </td>
+
+                        {/* 8. ACTIONS */}
+                        <td>
+                          <div className="actions-cell-wrap">
+                            <button
+                              className="icon-action-btn view"
+                              onClick={() => setSelectedSub(sub)}
+                              title="View Subscription Details"
+                            >
+                              <Eye size={15} />
+                            </button>
+
+                            <button
+                              className="icon-action-btn cancel"
+                              disabled={!isActive}
+                              onClick={() => handleCancel(sub._id)}
+                              title={isActive ? "Cancel Subscription" : "Subscription not active"}
+                            >
+                              <Ban size={15} />
+                            </button>
+
+                            <button
+                              className="icon-action-btn delete"
+                              onClick={() => handleDelete(sub._id)}
+                              title="Delete Subscription Permanently"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="sub-pagination-wrap">
+                <span className="pagination-info">
+                  Showing page {page} of {totalPages}
+                </span>
+                <div className="pagination-btn-group">
+                  <button
+                    className="pagination-btn"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    disabled={page === totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          TAB 2: PAYMENT GATEWAY TRANSACTIONS (Razorpay, Easebuzz)
+          ───────────────────────────────────────────────────────────── */}
+      {activeTab === "transactions" && (
+        <>
+          {/* Transactions Filter Bar */}
+          <div className="sub-filter-bar">
+            <div className="sub-search-wrap">
+              <Search size={16} className="sub-search-icon" />
+              <input
+                type="text"
+                className="sub-search-input"
+                placeholder="Search transaction ID, order ID, phone, email, name..."
+                value={txSearch}
+                onChange={(e) => setTxSearch(e.target.value)}
+              />
+            </div>
+
+            <select
+              className="sub-select-filter"
+              value={txGatewayFilter}
+              onChange={(e) => setTxGatewayFilter(e.target.value)}
+            >
+              <option value="all">All Gateways</option>
+              <option value="razorpay">Razorpay</option>
+              <option value="easebuzz">Easebuzz</option>
+            </select>
+
+            <button
+              className="btn-header-action sync-btn"
+              onClick={handleSyncPayments}
+              disabled={syncing}
+            >
+              <Zap size={15} className={syncing ? "spinning" : ""} />
+              {syncing ? "Syncing..." : "Sync Live Payments"}
             </button>
+          </div>
+
+          {/* Transactions Table */}
+          <div className="sub-table-container">
+            <table className="sub-table">
+              <thead>
+                <tr>
+                  <th>PAYMENT / ORDER ID</th>
+                  <th>GATEWAY</th>
+                  <th>CUSTOMER DETAIL</th>
+                  <th>AMOUNT</th>
+                  <th>DATE &amp; TIME</th>
+                  <th>PAYMENT STATUS</th>
+                  <th>SUBSCRIPTION</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {loadingTx ? (
+                  <tr>
+                    <td colSpan="8" className="empty-table-state">
+                      <RefreshCw size={28} className="spinning" style={{ margin: "0 auto", color: "#38bdf8" }} />
+                      <p>Fetching payment transactions from gateways...</p>
+                    </td>
+                  </tr>
+                ) : filteredGatewayTx.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="empty-table-state">
+                      <AlertCircle size={32} style={{ margin: "0 auto", color: "#64748b" }} />
+                      <p>No transactions found for the selected gateway filter.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGatewayTx.map((tx, idx) => {
+                    const isSuccess =
+                      tx.status === "success" ||
+                      tx.status === "captured" ||
+                      tx.rawStatus === "completed";
+
+                    const isFailed =
+                      tx.status === "failed" ||
+                      tx.status === "bounced" ||
+                      tx.status === "dropped";
+
+                    return (
+                      <tr key={tx.id || idx}>
+                        {/* ID */}
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span style={{ fontWeight: 600, color: "var(--text, #f8fafc)", fontFamily: "monospace" }}>
+                              {tx.id}
+                            </span>
+                            {tx.orderId && tx.orderId !== tx.id && (
+                              <span style={{ fontSize: "0.75rem", color: "var(--text-muted, #64748b)" }}>
+                                Order: {tx.orderId}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Gateway */}
+                        <td>
+                          <span className={`badge-pill ${getGatewayPillClass(tx.gateway)}`}>
+                            {getGatewayDisplayName(tx.gateway)}
+                          </span>
+                        </td>
+
+                        {/* Customer */}
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span style={{ fontWeight: 600, color: "var(--text, #f1f5f9)" }}>
+                              {tx.customerName || "Customer"}
+                            </span>
+                            <span style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>
+                              {tx.customerPhone || "--"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-soft, #64748b)" }}>
+                              {tx.customerEmail || "--"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Amount */}
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                            <span className="amount-cell">₹{tx.amount}</span>
+                            <span style={{ fontSize: "0.72rem", color: "var(--text-muted, #94a3b8)", textTransform: "uppercase" }}>
+                              {tx.method || "Online"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Date */}
+                        <td>
+                          <span style={{ fontSize: "0.825rem", color: "var(--text, #cbd5e1)" }}>
+                            {tx.createdAt ? new Date(tx.createdAt).toLocaleString("en-IN") : "--"}
+                          </span>
+                        </td>
+
+                        {/* Payment Status */}
+                        <td>
+                          <span
+                            className={`badge-pill ${
+                              isSuccess
+                                ? "status-active"
+                                : isFailed
+                                ? "status-expired"
+                                : "status-cancelled"
+                            }`}
+                          >
+                            {isSuccess ? "● Captured / Success" : isFailed ? "✕ " + (tx.rawStatus || "Failed") : tx.status}
+                          </span>
+                        </td>
+
+                        {/* Subscription Status */}
+                        <td>
+                          {tx.hasSubscription ? (
+                            <span className="badge-pill status-active">
+                              <CheckCircle2 size={12} /> Subscribed
+                            </span>
+                          ) : (
+                            <span className="badge-pill status-cancelled">
+                              Not Subscribed
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Action */}
+                        <td>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            {!tx.hasSubscription && (
+                              <button
+                                className="gateway-sync-btn"
+                                onClick={() => handleSyncSingleTx(tx)}
+                                title="Activate subscription for this payment"
+                              >
+                                <Zap size={12} /> Sync
+                              </button>
+                            )}
+                            <button
+                              className="icon-action-btn view"
+                              onClick={() => setSelectedTx(tx)}
+                              title="View Payment Details"
+                            >
+                              <Eye size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL 1: VIEW SUBSCRIPTION DETAILS
+          ───────────────────────────────────────────────────────────── */}
+      {selectedSub && (
+        <div className="sub-modal-overlay" onClick={() => setSelectedSub(null)}>
+          <div className="sub-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="sub-modal-head">
+              <h3>Subscription Details</h3>
+              <button className="sub-modal-close-btn" onClick={() => setSelectedSub(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="sub-modal-body">
+              <div className="detail-row-item">
+                <span className="detail-label">Subscriber Name</span>
+                <span className="detail-val">{selectedSub.user?.name || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Subscriber Email</span>
+                <span className="detail-val">{selectedSub.user?.email || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Subscriber Phone</span>
+                <span className="detail-val">{selectedSub.user?.phone || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Plan Name</span>
+                <span className="detail-val">{selectedSub.plan?.name || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Platform</span>
+                <span className="detail-val">
+                  {selectedSub.platform === "website" ? "Website" : "Mobile App"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Payment Gateway</span>
+                <span className="detail-val">{getGatewayDisplayName(selectedSub.paymentGateway)}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Payment ID</span>
+                <span className="detail-val" style={{ fontFamily: "monospace" }}>
+                  {selectedSub.paymentId || "--"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Subscription / Order ID</span>
+                <span className="detail-val" style={{ fontFamily: "monospace" }}>
+                  {selectedSub.subscriptionId || "--"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Amount Paid</span>
+                <span className="detail-val" style={{ color: "#16a34a" }}>
+                  ₹{selectedSub.amount || 0}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Start Date</span>
+                <span className="detail-val">
+                  {selectedSub.startDate ? new Date(selectedSub.startDate).toLocaleDateString("en-IN") : "--"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">End Date</span>
+                <span className="detail-val">
+                  {selectedSub.endDate ? new Date(selectedSub.endDate).toLocaleDateString("en-IN") : "--"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Status</span>
+                <span
+                  className={`badge-pill ${
+                    selectedSub.status === "active"
+                      ? "status-active"
+                      : selectedSub.status === "cancelled"
+                      ? "status-cancelled"
+                      : "status-expired"
+                  }`}
+                >
+                  {selectedSub.status}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Give Subscription Modal */}
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL 2: VIEW GATEWAY TRANSACTION DETAILS
+          ───────────────────────────────────────────────────────────── */}
+      {selectedTx && (
+        <div className="sub-modal-overlay" onClick={() => setSelectedTx(null)}>
+          <div className="sub-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="sub-modal-head">
+              <h3>Gateway Payment Transaction</h3>
+              <button className="sub-modal-close-btn" onClick={() => setSelectedTx(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="sub-modal-body">
+              <div className="detail-row-item">
+                <span className="detail-label">Gateway</span>
+                <span className="detail-val">{getGatewayDisplayName(selectedTx.gateway)}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Transaction / Payment ID</span>
+                <span className="detail-val" style={{ fontFamily: "monospace" }}>
+                  {selectedTx.id}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Order ID</span>
+                <span className="detail-val" style={{ fontFamily: "monospace" }}>
+                  {selectedTx.orderId || "--"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Customer Name</span>
+                <span className="detail-val">{selectedTx.customerName || "Customer"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Customer Phone</span>
+                <span className="detail-val">{selectedTx.customerPhone || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Customer Email</span>
+                <span className="detail-val">{selectedTx.customerEmail || "--"}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Amount</span>
+                <span className="detail-val" style={{ color: "#16a34a" }}>
+                  ₹{selectedTx.amount}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Payment Method</span>
+                <span className="detail-val" style={{ textTransform: "uppercase" }}>
+                  {selectedTx.method || "Online"}
+                </span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Payment Status</span>
+                <span className="detail-val">{selectedTx.rawStatus || selectedTx.status}</span>
+              </div>
+
+              <div className="detail-row-item">
+                <span className="detail-label">Subscription Status</span>
+                <span className="detail-val">
+                  {selectedTx.hasSubscription ? "Active Subscription Linked" : "Not Linked to Subscription"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL 3: GIVE SUBSCRIPTION MODAL
+          ───────────────────────────────────────────────────────────── */}
       {isGiveOpen && (
-        <div className="modal-overlay" onClick={() => setIsGiveOpen(false)} style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0, 0, 0, 0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999,
-          backdropFilter: "blur(6px)"
-        }}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{
-            background: "var(--bg2)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "24px",
-            width: "100%",
-            maxWidth: "500px",
-            boxShadow: "var(--shadow)"
-          }}>
-            <div className="modal-head" style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              borderBottom: "1px solid var(--border)",
-              paddingBottom: "12px"
-            }}>
-              <h3 style={{ margin: 0, fontSize: "1.25rem", color: "var(--text)" }}>Give Subscription</h3>
-              <button
-                onClick={() => setIsGiveOpen(false)}
-                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-              >
-                <X size={24} />
+        <div className="sub-modal-overlay" onClick={() => setIsGiveOpen(false)}>
+          <div className="sub-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="sub-modal-head">
+              <h3>Give Subscription</h3>
+              <button className="sub-modal-close-btn" onClick={() => setIsGiveOpen(false)}>
+                <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleGiveSubmit}>
-              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px", maxHeight: "60vh", overflowY: "auto", paddingRight: "4px" }}>
+              <div className="sub-modal-body">
                 {giveError && (
-                  <div style={{ color: "var(--red)", background: "rgba(239, 68, 68, 0.1)", padding: "10px 14px", borderRadius: 6, fontSize: "0.9rem" }}>
+                  <div
+                    style={{
+                      color: "#ef4444",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      padding: "10px 14px",
+                      borderRadius: 8,
+                      fontSize: "0.85rem",
+                    }}
+                  >
                     {giveError}
                   </div>
                 )}
 
-                <div className="form-row" ref={userDropdownRef} style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Select User *</label>
+                {/* User Picker */}
+                <div ref={userDropdownRef} style={{ position: "relative" }}>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                    Select User *
+                  </label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="sub-search-input"
+                    style={{ paddingLeft: 14 }}
                     placeholder="Search user by name, email, or phone..."
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
                     value={userSearchTerm}
+                    onFocus={() => setShowUserDropdown(true)}
                     onChange={(e) => {
                       setUserSearchTerm(e.target.value);
                       setShowUserDropdown(true);
-                      if (giveForm.user) setGiveForm({ ...giveForm, user: "" });
+                      setGiveForm((prev) => ({ ...prev, user: "" }));
                     }}
-                    onFocus={() => setShowUserDropdown(true)}
+                    required={!giveForm.user}
                   />
+
                   {showUserDropdown && (
-                    <div style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      background: "var(--bg3)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                      zIndex: 100,
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
-                      marginTop: "4px"
-                    }}>
-                      {usersList.filter(u => 
-                        !userSearchTerm || 
-                        (u.name && u.name.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
-                        (u.email && u.email.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
-                        (u.phone && String(u.phone).toLowerCase().includes(userSearchTerm.toLowerCase()))
-                      ).map((u) => (
-                        <div 
-                          key={u._id}
-                          style={{ 
-                            padding: "8px 12px", 
-                            cursor: "pointer", 
-                            borderBottom: "1px solid var(--border)",
-                            color: "var(--text)",
-                            fontSize: "0.9rem"
-                          }}
-                          onClick={() => {
-                            setGiveForm({ ...giveForm, user: u._id });
-                            setUserSearchTerm(`${u.name} (${u.email || u.phone || u._id})`);
-                            setShowUserDropdown(false);
-                          }}
-                          onMouseEnter={(e) => e.target.style.background = "var(--bg2)"}
-                          onMouseLeave={(e) => e.target.style.background = "transparent"}
-                        >
-                          {u.name} ({u.email || u.phone || u._id})
-                        </div>
-                      ))}
-                      {usersList.filter(u => 
-                        !userSearchTerm || 
-                        (u.name && u.name.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
-                        (u.email && u.email.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
-                        (u.phone && String(u.phone).toLowerCase().includes(userSearchTerm.toLowerCase()))
-                      ).length === 0 && (
-                        <div style={{ padding: "8px 12px", color: "var(--text-muted)", fontSize: "0.9rem", fontStyle: "italic" }}>
-                          No users found.
-                        </div>
-                      )}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        background: "var(--bg2, #0c0f18)",
+                        border: "1px solid var(--border2, rgba(255, 255, 255, 0.15))",
+                        borderRadius: 8,
+                        maxHeight: 180,
+                        overflowY: "auto",
+                        zIndex: 10,
+                        marginTop: 4,
+                        boxShadow: "0 10px 20px rgba(0, 0, 0, 0.5)",
+                      }}
+                    >
+                      {usersList
+                        .filter((u) => {
+                          const term = userSearchTerm.toLowerCase();
+                          return (
+                            (u.name || "").toLowerCase().includes(term) ||
+                            (u.email || "").toLowerCase().includes(term) ||
+                            (u.phone || "").toLowerCase().includes(term)
+                          );
+                        })
+                        .map((u) => (
+                          <div
+                            key={u._id}
+                            style={{
+                              padding: "10px 14px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid var(--border, rgba(255, 255, 255, 0.05))",
+                              fontSize: "0.85rem",
+                            }}
+                            onClick={() => {
+                              setGiveForm((prev) => ({ ...prev, user: u._id }));
+                              setUserSearchTerm(`${u.name || "User"} (${u.phone || u.email || u._id})`);
+                              setShowUserDropdown(false);
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, color: "var(--text, #f8fafc)" }}>{u.name || "User"}</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #94a3b8)" }}>{u.phone || u.email}</div>
+                          </div>
+                        ))}
                     </div>
                   )}
-                  {/* Hidden required input for form validation */}
-                  <input type="hidden" required value={giveForm.user} />
                 </div>
 
-                <div className="form-row" ref={planDropdownRef} style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Select Plan *</label>
+                {/* Plan Picker */}
+                <div ref={planDropdownRef} style={{ position: "relative" }}>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                    Select Plan *
+                  </label>
                   <input
                     type="text"
-                    className="form-input"
-                    placeholder="Search plan by name..."
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
+                    className="sub-search-input"
+                    style={{ paddingLeft: 14 }}
+                    placeholder="Search or select subscription plan..."
                     value={planSearchTerm}
+                    onFocus={() => setShowPlanDropdown(true)}
                     onChange={(e) => {
                       setPlanSearchTerm(e.target.value);
                       setShowPlanDropdown(true);
-                      if (giveForm.plan) handlePlanChange(""); 
                     }}
-                    onFocus={() => setShowPlanDropdown(true)}
+                    required={!giveForm.plan}
                   />
+
                   {showPlanDropdown && (
-                    <div style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      background: "var(--bg3)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      maxHeight: "200px",
-                      overflowY: "auto",
-                      zIndex: 100,
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
-                      marginTop: "4px"
-                    }}>
-                      {plansList.filter(p => 
-                        !planSearchTerm || 
-                        (p.name && p.name.toLowerCase().includes(planSearchTerm.toLowerCase()))
-                      ).map((p) => (
-                        <div 
-                          key={p._id}
-                          style={{ 
-                            padding: "8px 12px", 
-                            cursor: "pointer", 
-                            borderBottom: "1px solid var(--border)",
-                            color: "var(--text)",
-                            fontSize: "0.9rem"
-                          }}
-                          onClick={() => {
-                            handlePlanChange(p._id);
-                            setPlanSearchTerm(`${p.name} (₹${p.price} - ${p.duration} days)`);
-                            setShowPlanDropdown(false);
-                          }}
-                          onMouseEnter={(e) => e.target.style.background = "var(--bg2)"}
-                          onMouseLeave={(e) => e.target.style.background = "transparent"}
-                        >
-                          {p.name} (₹{p.price} - {p.duration} days)
-                        </div>
-                      ))}
-                      {plansList.filter(p => 
-                        !planSearchTerm || 
-                        (p.name && p.name.toLowerCase().includes(planSearchTerm.toLowerCase()))
-                      ).length === 0 && (
-                        <div style={{ padding: "8px 12px", color: "var(--text-muted)", fontSize: "0.9rem", fontStyle: "italic" }}>
-                          No plans found.
-                        </div>
-                      )}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        background: "var(--bg2, #0c0f18)",
+                        border: "1px solid var(--border2, rgba(255, 255, 255, 0.15))",
+                        borderRadius: 8,
+                        maxHeight: 180,
+                        overflowY: "auto",
+                        zIndex: 10,
+                        marginTop: 4,
+                        boxShadow: "0 10px 20px rgba(0, 0, 0, 0.5)",
+                      }}
+                    >
+                      {plansList
+                        .filter((p) => (p.name || "").toLowerCase().includes(planSearchTerm.toLowerCase()))
+                        .map((p) => (
+                          <div
+                            key={p._id}
+                            style={{
+                              padding: "10px 14px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid var(--border, rgba(255, 255, 255, 0.05))",
+                              fontSize: "0.85rem",
+                            }}
+                            onClick={() => {
+                              handlePlanChange(p._id);
+                              setPlanSearchTerm(`${p.name} (₹${p.price} - ${p.duration} Days)`);
+                              setShowPlanDropdown(false);
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, color: "var(--text, #f8fafc)" }}>
+                              {p.name} • ₹{p.price}
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #94a3b8)" }}>
+                              Duration: {p.duration} Days • Platform: {p.platform || "App"}
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   )}
-                  {/* Hidden required input for form validation */}
-                  <input type="hidden" required value={giveForm.plan} />
                 </div>
 
-                <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Amount Paid *</label>
+                {/* Amount */}
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                    Amount (₹)
+                  </label>
                   <input
                     type="number"
-                    className="form-input"
-                    required
-                    min="0"
-                    placeholder="e.g. 299"
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
+                    className="sub-search-input"
+                    style={{ paddingLeft: 14 }}
                     value={giveForm.amount}
-                    onChange={(e) => setGiveForm({ ...giveForm, amount: e.target.value })}
+                    onChange={(e) => setGiveForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    placeholder="Enter amount"
                   />
                 </div>
 
-                <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Start Date *</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    required
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
-                    value={giveForm.startDate}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
-                  />
+                {/* Gateway & Platform (SabPaisa removed) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                      Gateway
+                    </label>
+                    <select
+                      className="sub-select-filter"
+                      style={{ width: "100%" }}
+                      value={giveForm.paymentGateway}
+                      onChange={(e) => setGiveForm((prev) => ({ ...prev, paymentGateway: e.target.value }))}
+                    >
+                      <option value="manual">Manual</option>
+                      <option value="razorpay">Razorpay</option>
+                      <option value="easebuzz">Easebuzz</option>
+                      <option value="voucher">Voucher</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                      Platform
+                    </label>
+                    <select
+                      className="sub-select-filter"
+                      style={{ width: "100%" }}
+                      value={giveForm.platform}
+                      onChange={(e) => setGiveForm((prev) => ({ ...prev, platform: e.target.value }))}
+                    >
+                      <option value="app">Mobile App</option>
+                      <option value="website">Website</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Expiry Date *</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    required
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
-                    value={giveForm.endDate}
-                    onChange={(e) => setGiveForm({ ...giveForm, endDate: e.target.value })}
-                  />
+                {/* Dates */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                      Start Date *
+                    </label>
+                    <input
+                      type="date"
+                      className="sub-search-input"
+                      style={{ paddingLeft: 14 }}
+                      value={giveForm.startDate}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                      End Date *
+                    </label>
+                    <input
+                      type="date"
+                      className="sub-search-input"
+                      style={{ paddingLeft: 14 }}
+                      value={giveForm.endDate}
+                      onChange={(e) => setGiveForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Payment ID (Optional)</label>
+                {/* Optional Payment ID */}
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)", marginBottom: 6 }}>
+                    Payment ID (Optional)
+                  </label>
                   <input
                     type="text"
-                    className="form-input"
-                    placeholder="e.g. pay_manual_123"
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
+                    className="sub-search-input"
+                    style={{ paddingLeft: 14 }}
+                    placeholder="e.g. pay_xxx or EB_xxx"
                     value={giveForm.paymentId}
-                    onChange={(e) => setGiveForm({ ...giveForm, paymentId: e.target.value })}
+                    onChange={(e) => setGiveForm((prev) => ({ ...prev, paymentId: e.target.value }))}
                   />
                 </div>
 
-                <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-soft)" }}>Subscription ID (Optional)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. sub_manual_123"
-                    style={{ background: "var(--bg3)", border: "1px solid var(--border)", color: "var(--text)", padding: "8px 12px", borderRadius: "var(--radius-sm)", width: "100%" }}
-                    value={giveForm.subscriptionId}
-                    onChange={(e) => setGiveForm({ ...giveForm, subscriptionId: e.target.value })}
-                  />
-                </div>
-              </div>
+                {/* Modal Submit Actions */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="btn-header-action"
+                    onClick={() => setIsGiveOpen(false)}
+                  >
+                    Cancel
+                  </button>
 
-              <div className="modal-foot" style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid var(--border)",
-                    background: "transparent",
-                    color: "var(--text-soft)",
-                    cursor: "pointer",
-                    fontWeight: "600"
-                  }}
-                  onClick={() => setIsGiveOpen(false)}
-                  disabled={giving}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "none",
-                    background: "var(--primary)",
-                    color: "white",
-                    cursor: "pointer",
-                    fontWeight: "600"
-                  }}
-                  disabled={giving}
-                >
-                  {giving ? "Assigning..." : "Give Subscription"}
-                </button>
+                  <button
+                    type="submit"
+                    className="btn-header-primary"
+                    disabled={giving}
+                  >
+                    {giving ? "Assigning..." : "Assign Subscription"}
+                  </button>
+                </div>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal View Details */}
-      {selectedSub && (
-        <div className="modal-overlay" onClick={() => setSelectedSub(null)} style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0, 0, 0, 0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999,
-          backdropFilter: "blur(6px)"
-        }}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{
-            background: "var(--bg2)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: "24px",
-            width: "100%",
-            maxWidth: "500px",
-            boxShadow: "var(--shadow)"
-          }}>
-            <div className="modal-head" style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              borderBottom: "1px solid var(--border)",
-              paddingBottom: "12px"
-            }}>
-              <h3 style={{ margin: 0, fontSize: "1.25rem", color: "var(--text)" }}>Subscription Details</h3>
-              <button
-                onClick={() => setSelectedSub(null)}
-                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* User Section */}
-              <div style={{ display: "flex", alignItems: "center", gap: "16px", background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "var(--radius-sm)" }}>
-                <div style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  background: "var(--bg3)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "1px solid var(--border)"
-                }}>
-                  {selectedSub.user?.profileImage ? (
-                    <img src={getImageUrl(selectedSub.user.profileImage)} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <User size={24} style={{ color: "var(--text-soft)" }} />
-                  )}
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "1rem", color: "var(--text)" }}>{selectedSub.user?.name || "Unknown User"}</h4>
-                  <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-soft)" }}>{selectedSub.user?.email || "No Email"}</p>
-                  <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "var(--text-muted)", fontFamily: "monospace" }}>{selectedSub.user?.phone || "No Phone"}</p>
-                </div>
-              </div>
-
-              {/* Plan Section */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Plan Name</span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "var(--text)" }}>{selectedSub.plan?.name || selectedSub.plan || "-"}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Status</span>
-                  <span style={{
-                    fontSize: "0.75rem",
-                    fontWeight: "600",
-                    padding: "2px 8px",
-                    borderRadius: "12px",
-                    background: selectedSub.status === "active" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-                    color: selectedSub.status === "active" ? "#10b981" : "#ef4444"
-                  }}>
-                    {selectedSub.status === "active" ? "Active" : selectedSub.status === "cancelled" ? "Cancelled" : "Expired"}
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Amount Paid</span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text)" }}>₹{selectedSub.amount || 0}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Currency</span>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text)" }}>{selectedSub.currency || "INR"}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Payment Gateway</span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "600", textTransform: "capitalize", color: selectedSub.paymentGateway === "zaakpay" ? "#3b82f6" : "#22c55e" }}>
-                    {selectedSub.paymentGateway || "Razorpay"}
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Transaction / Payment ID</span>
-                  <span style={{ fontSize: "0.8rem", color: "var(--text-soft)", fontFamily: "monospace" }}>{selectedSub.paymentId || selectedSub.subscriptionId || "N/A"}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Start Date</span>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text)" }}>
-                    {selectedSub.startDate ? new Date(selectedSub.startDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px dashed var(--border)", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Expiry Date</span>
-                  <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text)" }}>
-                    {selectedSub.endDate ? new Date(selectedSub.endDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-foot" style={{ marginTop: "24px" }}>
-              <button
-                className="btn btn-ghost"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "var(--text-soft)",
-                  cursor: "pointer",
-                  fontWeight: "600"
-                }}
-                onClick={() => setSelectedSub(null)}
-              >
-                Close Details
-              </button>
-            </div>
           </div>
         </div>
       )}
