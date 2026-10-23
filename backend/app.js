@@ -37,17 +37,9 @@ const landingPageUrls = process.env.LANDING_PAGE_URL
 
 const defaultAllowed = [
   process.env.FRONTEND_URL,
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://admin.chulbulplay.in",
-  "https://chulbulplay.in",
-  "https://www.chulbulplay.in",
-  "https://api.chulbulplay.in",
-  "https://chulbulplay-admin.vercel.app",
-  "https://chulbulplay.vercel.app",
-  "https://chulbulplay-lnew.vercel.app",
-  "https://chulbul-landing-page.vercel.app",
-  "https://www.chulbulplay.com",
+  "https://admin.chulbulplay.com",
+  "https://chulbulplay.com",
+  "https://www.chulbulplay.com"
 ];
 
 const allowedOrigins = [...new Set([...frontendUrls, ...adminUrls, ...landingPageUrls, ...defaultAllowed].filter(Boolean))];
