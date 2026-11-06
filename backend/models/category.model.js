@@ -1,5 +1,24 @@
 const mongoose = require("mongoose");
 
+const curatedItemSchema = new mongoose.Schema(
+  {
+    contentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    contentType: {
+      type: String,
+      enum: ["series", "movie"],
+      default: "series",
+    },
+    position: {
+      type: Number,
+      default: 1,
+    },
+  },
+  { _id: false }
+);
+
 const categorySchema = new mongoose.Schema(
   {
     name: {
@@ -26,6 +45,11 @@ const categorySchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    curatedItems: [curatedItemSchema],
   },
   { timestamps: true }
 );
