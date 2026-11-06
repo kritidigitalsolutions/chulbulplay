@@ -54,7 +54,7 @@
   border: 1px solid var(--border2);
   border-radius: var(--radius);
   padding: 24px;
-  transition: background 0.4s;
+  transition: background 0.15s;
   box-shadow: var(--shadow-sm);
 }
 

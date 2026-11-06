@@ -605,7 +605,7 @@ export default function CategoryPage() {
                     <Fragment key={cat._id}>
                       <tr className={`cat-row ${isExpanded ? "expanded" : ""}`}>
                         {/* # */}
-                        <td style={{ fontWeight: 700, color: "#ffffff" }}>{index + 1}</td>
+                        <td className="cat-col-num">{index + 1}</td>
 
                         {/* Category Name & Avatar */}
                         <td>
@@ -638,7 +638,7 @@ export default function CategoryPage() {
                         </td>
 
                         {/* Created Date */}
-                        <td style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                        <td className="cat-col-date">
                           {formatDate(cat.createdAt)}
                         </td>
 

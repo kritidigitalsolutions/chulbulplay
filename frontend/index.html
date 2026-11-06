@@ -6,6 +6,23 @@
   <link rel="shortcut icon" type="image/png" href="/chulbulplay-logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChulbulPlay</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light") {
+          document.documentElement.classList.add("light");
+          if (document.body) {
+            document.body.classList.add("light");
+          } else {
+            document.addEventListener("DOMContentLoaded", function () {
+              document.body.classList.add("light");
+            });
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
