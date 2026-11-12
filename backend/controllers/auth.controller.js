@@ -9,6 +9,7 @@ const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const axios = require("axios");
+const { recordUserLogin } = require("../utils/loginMonitor");
 
 // ========================================
 // FORMAT INDIAN PHONE
@@ -440,6 +441,9 @@ exports.verifyOtp = async (req, res) => {
       await user.save();
     }
 
+    // Record login monitor event
+    await recordUserLogin({ user, method: "OTP", req });
+
     // generate token
     const token =
       generateUserToken(user);
@@ -612,6 +616,9 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
+    // Record login monitor event
+    await recordUserLogin({ user, method: "GOOGLE", req });
+
     // Generate JWT
     const appToken = generateUserToken(user);
 
@@ -713,6 +720,9 @@ exports.firebasePhoneLogin = async (req, res) => {
       user.fcmTokenUpdatedAt = new Date();
       await user.save();
     }
+
+    // Record login monitor event
+    await recordUserLogin({ user, method: "FIREBASE", req });
 
     // Generate JWT
     const token = generateUserToken(user);

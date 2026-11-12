@@ -5,6 +5,7 @@ const router = express.Router();
 const { isAdmin } = require("../../middlewares/admin.middleware");
 const { getClientUploadConfig } = require("../../cdn/bunnyCDN");
 const upload = require("../../middlewares/upload.middleware");
+const { resolveLocalOrCdnUrl } = require("../../utils/mediaUrl");
 
 const {
   loginAdmin,
@@ -50,7 +51,7 @@ router.post("/bunny-upload", isAdmin, upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: "No file uploaded" });
   }
-  res.json({ success: true, url: req.file.cdnUrl || req.file.path });
+  res.json({ success: true, url: resolveLocalOrCdnUrl(req.file.path, req) });
 });
 
 //OTP

@@ -22,6 +22,7 @@ const {
 
 const {
     getAllUsers,
+    getLoginMonitor,
     getSingleUser,
     deleteUser,
     getRegistrationStats,
@@ -83,6 +84,13 @@ router.get(
     "/growth",
     isAdmin,
     getUserGrowth
+);
+
+// Get login & OTP monitor logs
+router.get(
+    "/login-monitor",
+    isAdmin,
+    getLoginMonitor
 );
 
 // Get single user

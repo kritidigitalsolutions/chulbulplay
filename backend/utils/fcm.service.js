@@ -9,13 +9,17 @@ const {
  * @param {string} params.token - Target FCM token
  * @param {string} params.title - Notification title
  * @param {string} params.body - Notification body content
+ * @param {string} [params.image] - Optional notification image URL
  * @param {Object} [params.data] - Optional metadata (converted to key-value strings)
  */
-const sendPushNotification = async ({ token, title, body, data }) => {
+const sendPushNotification = async ({ token, title, body, image, data }) => {
   try {
     if (!token) {
       return { success: false, error: "No token provided" };
     }
+
+    const rawImage = image && typeof image === "string" ? image.trim() : "";
+    const cleanImage = /^https?:\/\//i.test(rawImage) ? rawImage : "";
 
     if (!firebaseInitialized) {
       console.log("-----------------------------------------");
@@ -23,6 +27,7 @@ const sendPushNotification = async ({ token, title, body, data }) => {
       console.log("To:", token);
       console.log("Title:", title);
       console.log("Body:", body);
+      if (cleanImage) console.log("Image:", cleanImage);
       console.log("Data:", data);
       console.log("-----------------------------------------");
       return { success: true, messageId: `mock-id-${Date.now()}` };
@@ -32,7 +37,9 @@ const sendPushNotification = async ({ token, title, body, data }) => {
     const stringifiedData = {};
     if (data) {
       Object.keys(data).forEach((key) => {
-        stringifiedData[key] = String(data[key]);
+        if (data[key] !== undefined && data[key] !== null) {
+          stringifiedData[key] = String(data[key]);
+        }
       });
     }
 
@@ -41,6 +48,7 @@ const sendPushNotification = async ({ token, title, body, data }) => {
       notification: {
         title,
         body,
+        ...(cleanImage ? { imageUrl: cleanImage } : {}),
       },
       data: stringifiedData,
       android: {
@@ -48,7 +56,8 @@ const sendPushNotification = async ({ token, title, body, data }) => {
         notification: {
           sound: "default",
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
-          channelId: process.env.FCM_CHANNEL_ID || "chulbulplay_channel",    // Must match Flutter's AndroidNotificationDetails channel ID
+          channelId: process.env.FCM_CHANNEL_ID || "chulbulplay_channel",
+          ...(cleanImage ? { imageUrl: cleanImage } : {}),
         },
       },
       apns: {
@@ -60,8 +69,10 @@ const sendPushNotification = async ({ token, title, body, data }) => {
             alert: { title, body },
             sound: "default",
             badge: 1,
+            ...(cleanImage ? { "mutable-content": 1 } : {}),
           },
         },
+        ...(cleanImage ? { fcmOptions: { imageUrl: cleanImage } } : {}),
       },
     };
 

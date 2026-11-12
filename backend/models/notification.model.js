@@ -13,10 +13,20 @@ const notificationSchema = new mongoose.Schema(
             required: true
         },
 
+        image: {
+            type: String,
+            default: ""
+        },
+
         type: {
             type: String,
-            // enum: ["GENERAL", "PROPERTY", "LEAD", "PLAN", "SYSTEM", "PROMOTIONAL"],
             default: "GENERAL"
+        },
+
+        attachmentType: {
+            type: String,
+            enum: ["NONE", "CONTENT", "PLAN"],
+            default: "NONE"
         },
 
         // If null, notification is for all users
@@ -29,7 +39,6 @@ const notificationSchema = new mongoose.Schema(
         // Target specific user types (if targetUser is null)
         targetUserType: {
             type: String,
-            // enum: ["ALL", "AGENT", "BUILDER", "INDIVIDUAL"],
             default: "ALL"
         },
 
@@ -68,21 +77,79 @@ const notificationSchema = new mongoose.Schema(
             default: null
         },
 
-        // Optional metadata for linking to specific resources
+        // Optional metadata for linking to content, plans, or custom URLs
         metadata: {
-            propertyId: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Property"
+            attachmentType: {
+                type: String,
+                enum: ["NONE", "CONTENT", "PLAN"],
+                default: "NONE"
             },
-            leadId: {
+            contentId: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "Lead"
+                default: null
+            },
+            contentType: {
+                type: String,
+                enum: ["movie", "series", ""],
+                default: ""
+            },
+            contentTitle: {
+                type: String,
+                default: ""
+            },
+            contentSlug: {
+                type: String,
+                default: ""
+            },
+            contentPoster: {
+                type: String,
+                default: ""
             },
             planId: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "Plan"
+                ref: "Plan",
+                default: null
             },
-            actionUrl: String
+            planName: {
+                type: String,
+                default: ""
+            },
+            planPrice: {
+                type: Number,
+                default: null
+            },
+            planDuration: {
+                type: Number,
+                default: null
+            },
+            planType: {
+                type: String,
+                default: ""
+            },
+            planPlatform: {
+                type: String,
+                default: ""
+            },
+            actionUrl: {
+                type: String,
+                default: ""
+            }
+        },
+
+        // Push delivery statistics
+        pushStats: {
+            totalUsers: {
+                type: Number,
+                default: 0
+            },
+            delivered: {
+                type: Number,
+                default: 0
+            },
+            failed: {
+                type: Number,
+                default: 0
+            }
         },
 
         // Who created this notification
@@ -110,5 +177,6 @@ const notificationSchema = new mongoose.Schema(
 notificationSchema.index({ targetUser: 1, createdAt: -1 });
 notificationSchema.index({ targetUserType: 1, createdAt: -1 });
 notificationSchema.index({ isActive: 1 });
+notificationSchema.index({ attachmentType: 1 });
 
 module.exports = mongoose.model("Notification", notificationSchema);

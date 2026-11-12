@@ -56,7 +56,7 @@
   flex-shrink: 0;
   box-shadow: 0 5px 18px rgba(229, 9, 20, 0.5);
   letter-spacing: 1px;
-  overflow: hidden;
+  overflow: hidden; 
 }
 
 .sidebar-logo img {

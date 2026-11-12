@@ -3,6 +3,7 @@ const router = express.Router();
 const { isAuth } = require("../../middlewares/auth.middleware");
 const {
     getMyNotifications,
+    getNotificationById,
     getUnreadCount,
     markAsRead,
     markAllAsRead,
@@ -25,6 +26,9 @@ router.get("/unread-count", getUnreadCount);
 
 // PATCH /api/notifications/read-all - Mark all as read
 router.patch("/read-all", markAllAsRead);
+
+// GET /api/notifications/:id - Get single notification details
+router.get("/:id", getNotificationById);
 
 // PATCH /api/notifications/:id/read - Mark single as read
 router.patch("/:id/read", markAsRead);

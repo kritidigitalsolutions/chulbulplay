@@ -71,6 +71,28 @@ authProvider: {
             default: false,
         },
 
+        lastLoginAt: {
+            type: Date,
+            default: null,
+        },
+
+        lastActiveAt: {
+            type: Date,
+            default: null,
+        },
+
+        lastLoginMethod: {
+            type: String,
+            enum: ["OTP", "GOOGLE", "FIREBASE", ""],
+            default: "",
+        },
+
+        lastPlatform: {
+            type: String,
+            enum: ["APP", "WEB", ""],
+            default: "",
+        },
+
         subscriptions: [
           {
             type: mongoose.Schema.Types.ObjectId,

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { touchUserActivity } = require("../utils/loginMonitor");
 
 const isAuth = async (
   req,
@@ -37,6 +38,7 @@ const isAuth = async (
     }
 
     req.user = decoded;
+    touchUserActivity({ userId: decoded.id, req });
 
     next();
 

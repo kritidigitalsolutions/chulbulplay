@@ -7,7 +7,72 @@ const Notification = require("../../models/notification.model");
 const Voucher = require("../../models/voucher.model");
 const Movie = require("../../models/movie.model");
 const Series = require("../../models/series.model");
+const UserLoginLog = require("../../models/userLoginLog.model");
 
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+const getIstTodayStart = (nowMs = Date.now()) => {
+    const istNow = new Date(nowMs + IST_OFFSET_MS);
+    istNow.setUTCHours(0, 0, 0, 0);
+    return new Date(istNow.getTime() - IST_OFFSET_MS);
+};
+
+const computeMonitorSummary = async (nowMs = Date.now()) => {
+    const onlineCutoff = new Date(nowMs - ONLINE_WINDOW_MS);
+    const istTodayStart = getIstTodayStart(nowMs);
+
+    const [
+        totalRegisteredUsers,
+        currentlyOnline,
+        loginsTodayFromLogs,
+        usersLoggedTodayFallback,
+        latestLog,
+        latestUserFallback,
+    ] = await Promise.all([
+        User.countDocuments({}),
+        User.countDocuments({
+            $or: [
+                { lastActiveAt: { $gte: onlineCutoff } },
+                { lastActiveAt: null, lastLoginAt: { $gte: onlineCutoff } },
+                { lastActiveAt: null, lastLoginAt: null, fcmTokenUpdatedAt: { $gte: onlineCutoff } },
+            ],
+        }),
+        UserLoginLog.countDocuments({ loginAt: { $gte: istTodayStart } }),
+        User.countDocuments({
+            lastLoginAt: null,
+            $or: [
+                { fcmTokenUpdatedAt: { $gte: istTodayStart } },
+                { createdAt: { $gte: istTodayStart } },
+            ],
+        }),
+        UserLoginLog.findOne({}).sort({ loginAt: -1 }).select("loginAt").lean(),
+        User.findOne({})
+            .sort({ lastLoginAt: -1, fcmTokenUpdatedAt: -1, createdAt: -1 })
+            .select("lastLoginAt fcmTokenUpdatedAt createdAt")
+            .lean(),
+    ]);
+
+    const loginsToday = loginsTodayFromLogs + usersLoggedTodayFallback;
+    const latestTs =
+        latestLog?.loginAt ||
+        latestUserFallback?.lastLoginAt ||
+        latestUserFallback?.fcmTokenUpdatedAt ||
+        latestUserFallback?.createdAt ||
+        null;
+
+    const inflowGapSeconds = latestTs
+        ? Math.max(0, Math.floor((nowMs - new Date(latestTs).getTime()) / 1000))
+        : null;
+
+    return {
+        totalRegisteredUsers,
+        currentlyOnline,
+        loginsToday,
+        lastLoginAt: latestTs,
+        inflowGapSeconds,
+    };
+};
 
 // ========================================
 // GET ALL USERS
@@ -17,47 +82,67 @@ exports.getAllUsers = async (
     res
 ) => {
     try {
-        const users = await User.aggregate([
-            {
-                $lookup: {
-                    from: "subscriptions",
-                    let: { userId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$user", "$$userId"] },
-                                        { $eq: ["$status", "active"] },
-                                        { $gte: ["$endDate", new Date()] }
-                                    ]
+        const nowMs = Date.now();
+        const [users, summary] = await Promise.all([
+            User.aggregate([
+                {
+                    $lookup: {
+                        from: "subscriptions",
+                        let: { userId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$user", "$$userId"] },
+                                            { $eq: ["$status", "active"] },
+                                            { $gte: ["$endDate", new Date()] }
+                                        ]
+                                    }
                                 }
                             }
-                        }
-                    ],
-                    as: "activeSubs"
+                        ],
+                        as: "activeSubs"
+                    }
+                },
+                {
+                    $addFields: {
+                        isSubscriber: { $gt: [{ $size: "$activeSubs" }, 0] }
+                    }
+                },
+                {
+                    $project: {
+                        activeSubs: 0,
+                        __v: 0
+                    }
+                },
+                {
+                    $sort: { createdAt: -1 }
                 }
-            },
-            {
-                $addFields: {
-                    isSubscriber: { $gt: [{ $size: "$activeSubs" }, 0] }
-                }
-            },
-            {
-                $project: {
-                    activeSubs: 0,
-                    __v: 0
-                }
-            },
-            {
-                $sort: { createdAt: -1 }
-            }
+            ]),
+            computeMonitorSummary(nowMs),
         ]);
+
+        const enrichedUsers = users.map((u) => {
+            const effectiveLastLogin = u.lastLoginAt || u.fcmTokenUpdatedAt || u.createdAt || null;
+            const effectiveLastActive = u.lastActiveAt || u.lastLoginAt || u.fcmTokenUpdatedAt || u.createdAt || null;
+            const isOnline = effectiveLastActive
+                ? nowMs - new Date(effectiveLastActive).getTime() <= ONLINE_WINDOW_MS
+                : false;
+
+            return {
+                ...u,
+                effectiveLastLogin,
+                effectiveLastActive,
+                isOnline,
+            };
+        });
 
         res.status(200).json({
             success: true,
-            count: users.length,
-            users,
+            count: enrichedUsers.length,
+            summary,
+            users: enrichedUsers,
         });
 
     } catch (error) {
@@ -66,6 +151,135 @@ exports.getAllUsers = async (
             error
         );
 
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+        });
+    }
+};
+
+// ========================================
+// GET LOGIN & OTP MONITOR
+// ========================================
+exports.getLoginMonitor = async (req, res) => {
+    try {
+        const nowMs = Date.now();
+        const limit = Math.max(1, Math.min(300, parseInt(req.query.limit, 10) || 150));
+        const search = String(req.query.search || "").trim().toLowerCase();
+
+        const [summary, rawLogs] = await Promise.all([
+            computeMonitorSummary(nowMs),
+            UserLoginLog.find({})
+                .populate("user", "name phone email profileImage profileComplete authProvider isBlocked lastActiveAt lastLoginAt fcmTokenUpdatedAt createdAt")
+                .sort({ loginAt: -1 })
+                .limit(limit)
+                .lean(),
+        ]);
+
+        let combinedLogs = rawLogs
+            .filter((l) => l.user)
+            .map((l) => {
+                const loginAt = l.loginAt || l.createdAt;
+                const lastActiveAt = l.lastActiveAt || l.user?.lastActiveAt || loginAt;
+                const isOnline = lastActiveAt
+                    ? nowMs - new Date(lastActiveAt).getTime() <= ONLINE_WINDOW_MS
+                    : false;
+                const visitDurationSeconds =
+                    loginAt && lastActiveAt
+                        ? Math.max(0, Math.floor((new Date(lastActiveAt).getTime() - new Date(loginAt).getTime()) / 1000))
+                        : 0;
+
+                return {
+                    _id: l._id,
+                    user: l.user,
+                    method: l.method || (l.user.authProvider === "GOOGLE" ? "GOOGLE" : "OTP"),
+                    platform: l.platform || "APP",
+                    loginAt,
+                    lastActiveAt,
+                    isOnline,
+                    visitDurationSeconds,
+                    ipAddress: l.ipAddress || "",
+                    isBackfill: false,
+                };
+            });
+
+        // If UserLoginLog has fewer records (e.g., freshly deployed), include recent users for immediate visibility
+        if (combinedLogs.length < 30) {
+            const seenUserIds = new Set(combinedLogs.map((l) => l.user._id.toString()));
+            const fallbackUsers = await User.find({
+                _id: { $nin: Array.from(seenUserIds) },
+            })
+                .select("name phone email profileImage profileComplete authProvider isBlocked lastActiveAt lastLoginAt lastLoginMethod lastPlatform fcmTokenUpdatedAt createdAt")
+                .sort({ lastLoginAt: -1, fcmTokenUpdatedAt: -1, createdAt: -1 })
+                .limit(30 - combinedLogs.length)
+                .lean();
+
+            const fallbackEntries = fallbackUsers.map((u) => {
+                const loginAt = u.lastLoginAt || u.fcmTokenUpdatedAt || u.createdAt;
+                const lastActiveAt = u.lastActiveAt || loginAt;
+                const isOnline = lastActiveAt
+                    ? nowMs - new Date(lastActiveAt).getTime() <= ONLINE_WINDOW_MS
+                    : false;
+                const visitDurationSeconds =
+                    loginAt && lastActiveAt
+                        ? Math.max(0, Math.floor((new Date(lastActiveAt).getTime() - new Date(loginAt).getTime()) / 1000))
+                        : 0;
+
+                return {
+                    _id: `user-${u._id}`,
+                    user: u,
+                    method: u.lastLoginMethod || (u.authProvider === "GOOGLE" ? "GOOGLE" : "OTP"),
+                    platform: u.lastPlatform || "APP",
+                    loginAt,
+                    lastActiveAt,
+                    isOnline,
+                    visitDurationSeconds,
+                    ipAddress: "",
+                    isBackfill: true,
+                };
+            });
+
+            combinedLogs = [...combinedLogs, ...fallbackEntries].sort(
+                (a, b) => new Date(b.loginAt) - new Date(a.loginAt)
+            );
+        }
+
+        // Apply optional search filter
+        if (search) {
+            combinedLogs = combinedLogs.filter((entry) => {
+                const u = entry.user || {};
+                return (
+                    (u.name || "").toLowerCase().includes(search) ||
+                    (u.phone || "").toLowerCase().includes(search) ||
+                    (u.email || "").toLowerCase().includes(search) ||
+                    (entry.method || "").toLowerCase().includes(search) ||
+                    (entry.platform || "").toLowerCase().includes(search)
+                );
+            });
+        }
+
+        // Compute gap from previous login for each row
+        const logsWithGaps = combinedLogs.map((entry, idx) => {
+            const nextEntry = combinedLogs[idx + 1];
+            const gapFromPrevSeconds =
+                nextEntry && entry.loginAt && nextEntry.loginAt
+                    ? Math.max(0, Math.floor((new Date(entry.loginAt).getTime() - new Date(nextEntry.loginAt).getTime()) / 1000))
+                    : null;
+
+            return {
+                ...entry,
+                gapFromPrevSeconds,
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            summary,
+            count: logsWithGaps.length,
+            logs: logsWithGaps,
+        });
+    } catch (error) {
+        console.error("Get Login Monitor Error:", error);
         res.status(500).json({
             success: false,
             message: "Server error",
@@ -141,6 +355,7 @@ exports.deleteUser = async (
             Voucher.updateMany({ usedBy: userId }, { $set: { isUsed: false, usedBy: null } }),
             Movie.updateMany({}, { $pull: { likes: userId, dislikes: userId } }),
             Series.updateMany({}, { $pull: { likes: userId, dislikes: userId } }),
+            UserLoginLog.deleteMany({ user: userId }),
         ]);
 
         await User.findByIdAndDelete(userId);

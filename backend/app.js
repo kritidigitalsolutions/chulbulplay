@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const connectDB = require("./config/db");
 const createDefaultAdmin = require("./utils/createDefaultAdmin");
+const { silentActivityTracker } = require("./utils/loginMonitor");
 
 require("dotenv").config();
 
@@ -100,6 +101,9 @@ app.use(
 
 // Serve local uploads folder statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Passively track authenticated user API activity for Login Monitor
+app.use("/api", silentActivityTracker);
 
 
 

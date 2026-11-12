@@ -21,6 +21,34 @@ const formatMediaUrl = (val) => {
   return bunnyUrl ? `${bunnyUrl}/${cleanPath}` : trimmed;
 };
 
+/**
+ * Resolves a stored media path: if it is a local /uploads/... file that exists on disk,
+ * returns its full backend URL (or relative /uploads/... path); otherwise falls back to CDN URL.
+ */
+const resolveLocalOrCdnUrl = (val, req = null) => {
+  if (!val || typeof val !== "string") return val || "";
+  const trimmed = val.trim().replace(/\\/g, "/");
+  if (!trimmed) return "";
+
+  if (/^(https?:\/\/|data:|blob:|\/\/)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/uploads/") || trimmed.startsWith("uploads/")) {
+    const relPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    const localFile = path.resolve(__dirname, "..", `.${relPath}`);
+    if (fs.existsSync(localFile)) {
+      if (req && typeof req.get === "function" && req.get("host")) {
+        const proto = req.headers?.["x-forwarded-proto"] || req.protocol || "http";
+        return `${proto}://${req.get("host")}${relPath}`;
+      }
+      return relPath;
+    }
+  }
+
+  return formatMediaUrl(trimmed);
+};
+
 const getMediaUrl = (file, fallback = "") => {
   if (!file) return formatMediaUrl(fallback);
   return formatMediaUrl(file.cdnUrl || file.path || fallback);
@@ -59,5 +87,10 @@ const deleteMediaFiles = async (...files) => {
   await Promise.all(files.filter(Boolean).map((file) => deleteMedia(file)));
 };
 
-module.exports = { formatMediaUrl, getMediaUrl, deleteMedia, deleteMediaFiles };
-
+module.exports = {
+  formatMediaUrl,
+  resolveLocalOrCdnUrl,
+  getMediaUrl,
+  deleteMedia,
+  deleteMediaFiles,
+};
