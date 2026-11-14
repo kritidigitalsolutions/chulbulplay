@@ -795,7 +795,7 @@ export default function AppUpdatesPopup() {
                       {/* Action Button & URL */}
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontWeight: 600, color: "#e2e8f0" }}>
+                          <span className="popup-tbl-action-text">
                             {p.actionButtonText || DEFAULT_ACTION_TEXT}
                           </span>
                           {p.actionUrl ? (
