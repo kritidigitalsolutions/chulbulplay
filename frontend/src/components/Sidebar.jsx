@@ -18,7 +18,8 @@ import {
   WalletCards,
   Globe,
   Smartphone,
-  Megaphone
+  Megaphone,
+  Sparkles
 } from "lucide-react";
 
 const NAV = [
@@ -35,6 +36,7 @@ const NAV = [
   { id: "payment-gateways", label: "Payment Gateways", icon: WalletCards, color: "#10b981" },
   { id: "admob", label: "Google AdMob Settings", icon: Megaphone, color: "#ea4335" },
   { id: "notifications", label: "Notifications", icon: Bell, color: "#f59e0b" },
+  { id: "app-updates-popup", label: "App Updates Popup", icon: Sparkles, color: "#ec4899" },
   { id: "legal", label: "Legal", icon: FileText, color: "#8b5cf6" },
   { id: "help", label: "Help Center", icon: HelpCircle, color: "#06b6d4" },
   { id: "company-info", label: "Company Info", icon: Building2, color: "#10b981" },

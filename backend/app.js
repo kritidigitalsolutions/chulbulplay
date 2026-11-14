@@ -316,6 +316,13 @@ app.use("/api/admin/banners", adminBannerRoutes);
 app.use("/api/posters", userPosterRoutes);
 app.use("/api/admin/posters", adminPosterRoutes);
 
+// ========= App Updates Popup ===============
+const userAppPopupRoutes = require("./routes/user/appPopup.routes");
+const adminAppPopupRoutes = require("./routes/admin/appPopup.routes");
+
+app.use("/api/app-popup", userAppPopupRoutes);
+app.use("/api/admin/app-popup", adminAppPopupRoutes);
+
 // ========================================
 // EXPORT
 // ========================================

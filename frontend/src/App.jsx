@@ -19,6 +19,7 @@ const WebsitePlansPage = lazy(() => import("./pages/WebsitePlans"));
 const PromoVoucher = lazy(() => import("./pages/PromoVoucher"));
 const SubscriptionPage = lazy(() => import("./pages/Subscriptions"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
+const AppUpdatesPopup = lazy(() => import("./pages/AppUpdatesPopup"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -108,6 +109,7 @@ function App() {
             <Route path="promo" element={<PromoVoucher />} />
             <Route path="pricing" element={<SubscriptionPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="app-updates-popup" element={<AppUpdatesPopup />} />
             <Route path="legal" element={<LegalPage />} />
             <Route path="help" element={<HelpPage />} />
             <Route path="company-info" element={<CompanyInfo />} />

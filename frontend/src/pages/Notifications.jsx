@@ -15,6 +15,8 @@ import {
   Check,
   ArrowRight,
   Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import API, { BASE_URL } from "../api/axios";
 import "./Dashboard.css";
@@ -93,6 +95,8 @@ export default function NotificationsPage() {
   const [planSearch, setPlanSearch]           = useState("");
   const [attachedContent, setAttachedContent] = useState(null);
   const [attachedPlan, setAttachedPlan]       = useState(null);
+  const [contentPickerOpen, setContentPickerOpen] = useState(true);
+  const [planPickerOpen, setPlanPickerOpen]       = useState(true);
 
   // UI feedback
   const [toast, setToast]         = useState(null);
@@ -200,8 +204,78 @@ export default function NotificationsPage() {
           ? "PLAN"
           : prev.type,
     }));
-    if (nextType !== "CONTENT") setAttachedContent(null);
-    if (nextType !== "PLAN") setAttachedPlan(null);
+    if (nextType !== "CONTENT") {
+      setAttachedContent(null);
+      setContentPickerOpen(true);
+    } else {
+      setContentPickerOpen(!attachedContent);
+    }
+    if (nextType !== "PLAN") {
+      setAttachedPlan(null);
+      setPlanPickerOpen(true);
+    } else {
+      setPlanPickerOpen(!attachedPlan);
+    }
+  };
+
+  // ── Select Content & Autofill All Fields ──────────────────────────────
+  const handleSelectContent = (item) => {
+    setAttachedContent(item);
+    setContentPickerOpen(false); // Close dropdown/list as requested
+
+    const isSeries = item.contentType === "series";
+    const slugOrId = item.slug || item._id;
+    const actionLink = `/${isSeries ? "series" : "movie"}/${slugOrId}`;
+    const candidateImg = item.banner || item.poster || "";
+    const posterUrl = candidateImg ? getMediaFullUrl(candidateImg) : "";
+
+    // Autofill title, message, actionUrl, type, and image
+    setForm((prev) => ({
+      ...prev,
+      title: `Now Streaming: ${item.title}`,
+      message: `Watch ${item.title} now streaming in 4K Ultra HD on RoccoPlay!`,
+      actionUrl: actionLink,
+      type: "CONTENT",
+      imageUrl: posterUrl || prev.imageUrl,
+    }));
+
+    // Auto-apply poster image to notification
+    if (posterUrl) {
+      setImageMode("url");
+      setImageFile(null);
+      setImagePreview(posterUrl);
+    }
+
+    showToast(`Attached "${item.title}" & autofilled notification fields!`);
+  };
+
+  const handleDetachContent = () => {
+    setAttachedContent(null);
+    setContentPickerOpen(true);
+  };
+
+  // ── Select Plan & Autofill All Fields ─────────────────────────────────
+  const handleSelectPlan = (plan) => {
+    setAttachedPlan(plan);
+    setPlanPickerOpen(false); // Close dropdown/list as requested
+
+    const actionLink = plan.platform === "website" ? "/website-plans" : "/plans";
+
+    // Autofill title, message, actionUrl, and type
+    setForm((prev) => ({
+      ...prev,
+      title: `Special Offer: ${plan.name}`,
+      message: `Subscribe to ${plan.name} for just ₹${plan.price} and enjoy unlimited entertainment for ${plan.duration} days!`,
+      actionUrl: actionLink,
+      type: "PLAN",
+    }));
+
+    showToast(`Attached "${plan.name}" & autofilled notification fields!`);
+  };
+
+  const handleDetachPlan = () => {
+    setAttachedPlan(null);
+    setPlanPickerOpen(true);
   };
 
   // ── Filtered lists ────────────────────────────────────────────────────
@@ -323,6 +397,8 @@ export default function NotificationsPage() {
     setSelectedUser(null);
     setAttachedContent(null);
     setAttachedPlan(null);
+    setContentPickerOpen(true);
+    setPlanPickerOpen(true);
     setContentSearch("");
     setPlanSearch("");
     clearImage();
@@ -685,6 +761,25 @@ export default function NotificationsPage() {
                   <Film size={15} />
                   <span>SELECT CONTENT ATTACHMENT</span>
                 </div>
+                {attachedContent && (
+                  <button
+                    type="button"
+                    className="notif-change-btn"
+                    onClick={() => setContentPickerOpen((prev) => !prev)}
+                  >
+                    {contentPickerOpen ? (
+                      <>
+                        <ChevronUp size={14} />
+                        <span>Hide List</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        <span>Change Content</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {attachedContent && (
@@ -718,7 +813,7 @@ export default function NotificationsPage() {
                           const posterUrl = getMediaFullUrl(attachedContent.banner || attachedContent.poster);
                           setImageMode("url");
                           setImageFile(null);
-                          setImagePreview("");
+                          setImagePreview(posterUrl);
                           setForm((prev) => ({ ...prev, imageUrl: posterUrl }));
                           showToast("Content poster applied as notification image!");
                         }}
@@ -728,8 +823,16 @@ export default function NotificationsPage() {
                     )}
                     <button
                       type="button"
+                      className="notif-change-btn"
+                      onClick={() => setContentPickerOpen((prev) => !prev)}
+                    >
+                      {contentPickerOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      {contentPickerOpen ? "Close List" : "Change Content"}
+                    </button>
+                    <button
+                      type="button"
                       className="notif-img-remove-btn"
-                      onClick={() => setAttachedContent(null)}
+                      onClick={handleDetachContent}
                     >
                       <X size={13} />
                       Detach
@@ -738,71 +841,76 @@ export default function NotificationsPage() {
                 </div>
               )}
 
-              <div className="notif-attach-search">
-                <Search size={15} />
-                <input
-                  type="text"
-                  placeholder="Search movies, series, tv shows, short films..."
-                  value={contentSearch}
-                  onChange={(e) => setContentSearch(e.target.value)}
-                />
-              </div>
+              {/* Show search & dropdown list only when no content is attached OR user explicitly clicked to change */}
+              {(!attachedContent || contentPickerOpen) && (
+                <>
+                  <div className="notif-attach-search">
+                    <Search size={15} />
+                    <input
+                      type="text"
+                      placeholder="Search movies, series, tv shows, short films..."
+                      value={contentSearch}
+                      onChange={(e) => setContentSearch(e.target.value)}
+                    />
+                  </div>
 
-              <div className="notif-attach-list">
-                {filteredContent.length === 0 ? (
-                  <div className="notif-user-empty">No matching movies or series found.</div>
-                ) : (
-                  filteredContent.map((item) => {
-                    const isSelected = attachedContent?._id === item._id;
-                    const isSeries = item.contentType === "series";
-                    const thumb = getMediaFullUrl(item.poster || item.banner);
+                  <div className="notif-attach-list">
+                    {filteredContent.length === 0 ? (
+                      <div className="notif-user-empty">No matching movies or series found.</div>
+                    ) : (
+                      filteredContent.map((item) => {
+                        const isSelected = attachedContent?._id === item._id;
+                        const isSeries = item.contentType === "series";
+                        const thumb = getMediaFullUrl(item.poster || item.banner);
 
-                    return (
-                      <div
-                        key={item._id}
-                        className={`notif-attach-item ${isSelected ? "selected" : ""}`}
-                        onClick={() => setAttachedContent(item)}
-                      >
-                        <div className="notif-attach-item-left">
-                          {thumb ? (
-                            <img src={thumb} alt={item.title} className="notif-attach-thumb" />
-                          ) : (
-                            <div className="notif-attach-thumb-placeholder">
-                              {isSeries ? <Tv size={16} /> : <Film size={16} />}
-                            </div>
-                          )}
-                          <div>
-                            <div className="notif-attach-name">{item.title}</div>
-                            <div className={`notif-attach-sub ${isSeries ? "series" : "movie"}`}>
-                              <span>{isSeries ? "Web Series" : "Movie"}</span>
-                              {item.releaseYear && (
-                                <span style={{ color: "var(--text-muted)" }}>· {item.releaseYear}</span>
+                        return (
+                          <div
+                            key={item._id}
+                            className={`notif-attach-item ${isSelected ? "selected" : ""}`}
+                            onClick={() => handleSelectContent(item)}
+                          >
+                            <div className="notif-attach-item-left">
+                              {thumb ? (
+                                <img src={thumb} alt={item.title} className="notif-attach-thumb" />
+                              ) : (
+                                <div className="notif-attach-thumb-placeholder">
+                                  {isSeries ? <Tv size={16} /> : <Film size={16} />}
+                                </div>
                               )}
+                              <div>
+                                <div className="notif-attach-name">{item.title}</div>
+                                <div className={`notif-attach-sub ${isSeries ? "series" : "movie"}`}>
+                                  <span>{isSeries ? "Web Series" : "Movie"}</span>
+                                  {item.releaseYear && (
+                                    <span style={{ color: "var(--text-muted)" }}>· {item.releaseYear}</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <button
-                          type="button"
-                          className={`notif-attach-btn ${isSelected ? "attached" : ""}`}
-                        >
-                          {isSelected ? (
-                            <>
-                              <Check size={14} />
-                              Attached
-                            </>
-                          ) : (
-                            <>
-                              <span>Attach</span>
-                              <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                            <button
+                              type="button"
+                              className={`notif-attach-btn ${isSelected ? "attached" : ""}`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check size={14} />
+                                  Attached
+                                </>
+                              ) : (
+                                <>
+                                  <span>Attach</span>
+                                  <ArrowRight size={14} />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -814,6 +922,25 @@ export default function NotificationsPage() {
                   <Crown size={15} />
                   <span>SELECT SUBSCRIPTION PLAN ATTACHMENT</span>
                 </div>
+                {attachedPlan && (
+                  <button
+                    type="button"
+                    className="notif-change-btn"
+                    onClick={() => setPlanPickerOpen((prev) => !prev)}
+                  >
+                    {planPickerOpen ? (
+                      <>
+                        <ChevronUp size={14} />
+                        <span>Hide List</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={14} />
+                        <span>Change Plan</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {attachedPlan && (
@@ -833,75 +960,90 @@ export default function NotificationsPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    className="notif-img-remove-btn"
-                    onClick={() => setAttachedPlan(null)}
-                  >
-                    <X size={13} />
-                    Detach
-                  </button>
+                  <div className="notif-attached-actions">
+                    <button
+                      type="button"
+                      className="notif-change-btn"
+                      onClick={() => setPlanPickerOpen((prev) => !prev)}
+                    >
+                      {planPickerOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      {planPickerOpen ? "Close List" : "Change Plan"}
+                    </button>
+                    <button
+                      type="button"
+                      className="notif-img-remove-btn"
+                      onClick={handleDetachPlan}
+                    >
+                      <X size={13} />
+                      Detach
+                    </button>
+                  </div>
                 </div>
               )}
 
-              <div className="notif-attach-search">
-                <Search size={15} />
-                <input
-                  type="text"
-                  placeholder="Search subscription plans (name, platform, type)..."
-                  value={planSearch}
-                  onChange={(e) => setPlanSearch(e.target.value)}
-                />
-              </div>
+              {/* Show search & dropdown list only when no plan is attached OR user explicitly clicked to change */}
+              {(!attachedPlan || planPickerOpen) && (
+                <>
+                  <div className="notif-attach-search">
+                    <Search size={15} />
+                    <input
+                      type="text"
+                      placeholder="Search subscription plans (name, platform, type)..."
+                      value={planSearch}
+                      onChange={(e) => setPlanSearch(e.target.value)}
+                    />
+                  </div>
 
-              <div className="notif-attach-list">
-                {filteredPlans.length === 0 ? (
-                  <div className="notif-user-empty">No subscription plans found.</div>
-                ) : (
-                  filteredPlans.map((plan) => {
-                    const isSelected = attachedPlan?._id === plan._id;
-                    return (
-                      <div
-                        key={plan._id}
-                        className={`notif-attach-item ${isSelected ? "selected" : ""}`}
-                        onClick={() => setAttachedPlan(plan)}
-                      >
-                        <div className="notif-attach-item-left">
-                          <div className="notif-plan-icon-box">
-                            <Crown size={18} />
-                          </div>
-                          <div>
-                            <div className="notif-attach-name">{plan.name}</div>
-                            <div className="notif-attach-sub">
-                              <span>
-                                ₹{plan.price} · {plan.duration} Days ·{" "}
-                                {plan.platform === "website" ? "Website Plan" : "App Plan"}
-                              </span>
+                  <div className="notif-attach-list">
+                    {filteredPlans.length === 0 ? (
+                      <div className="notif-user-empty">No subscription plans found.</div>
+                    ) : (
+                      filteredPlans.map((plan) => {
+                        const isSelected = attachedPlan?._id === plan._id;
+                        return (
+                          <div
+                            key={plan._id}
+                            className={`notif-attach-item ${isSelected ? "selected" : ""}`}
+                            onClick={() => handleSelectPlan(plan)}
+                          >
+                            <div className="notif-attach-item-left">
+                              <div className="notif-plan-icon-box">
+                                <Crown size={18} />
+                              </div>
+                              <div>
+                                <div className="notif-attach-name">{plan.name}</div>
+                                <div className="notif-attach-sub">
+                                  <span>
+                                    ₹{plan.price} · {plan.duration} Days ·{" "}
+                                    {plan.platform === "website" ? "Website Plan" : "App Plan"}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <button
-                          type="button"
-                          className={`notif-attach-btn ${isSelected ? "attached" : ""}`}
-                        >
-                          {isSelected ? (
-                            <>
-                              <Check size={14} />
-                              Attached
-                            </>
-                          ) : (
-                            <>
-                              <span>Attach</span>
-                              <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                            <button
+                              type="button"
+                              className={`notif-attach-btn ${isSelected ? "attached" : ""}`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <Check size={14} />
+                                  Attached
+                                </>
+                              ) : (
+                                <>
+                                  <span>Attach</span>
+                                  <ArrowRight size={14} />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

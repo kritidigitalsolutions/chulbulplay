@@ -14,6 +14,7 @@ const getUploadInfo = (req, file) => {
   if (req.originalUrl.includes("/banners")) type = "banners";
   if (req.originalUrl.includes("/posters")) type = "posters";
   if (req.originalUrl.includes("/notifications")) type = "notifications";
+  if (req.originalUrl.includes("/app-popup")) type = "popups";
 
   let subfolder = "others";
 
@@ -26,6 +27,8 @@ const getUploadInfo = (req, file) => {
       ? "banners"
       : req.originalUrl.includes("/notifications")
       ? "images"
+      : req.originalUrl.includes("/app-popup")
+      ? "popups"
       : "posters";
   } else if (file.fieldname === "video") {
     subfolder = "videos";
